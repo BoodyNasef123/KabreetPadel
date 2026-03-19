@@ -11,11 +11,11 @@ const io = new Server(server);
 const DATA_FILE = path.join(__dirname, 'bookings.json');
 const PORT = process.env.PORT || 3000;
 
-// Time slots: 8:00 AM to 10:00 PM, 1-hour slots
+// Time slots: 12:00 AM to 12:00 AM (full 24 hours), 1-hour slots
 const TIME_SLOTS = [];
-for (let h = 8; h < 22; h++) {
+for (let h = 0; h < 24; h++) {
   const start = `${h.toString().padStart(2, '0')}:00`;
-  const end = `${(h + 1).toString().padStart(2, '0')}:00`;
+  const end = `${((h + 1) % 24).toString().padStart(2, '0')}:00`;
   TIME_SLOTS.push(`${start} - ${end}`);
 }
 

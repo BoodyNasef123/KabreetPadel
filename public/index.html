@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kabreet Padel Courts</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🎾</span>
+        <div>
+          <h1>Kabreet Padel</h1>
+          <p class="subtitle">Family Retreat Court Booking</p>
+        </div>
+      </div>
+      <div class="live-badge">
+        <span class="live-dot"></span>
+        Live
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Date selector -->
+    <section class="date-section">
+      <div class="date-nav">
+        <button class="btn-nav" id="prevDay" aria-label="Previous day">&#8592;</button>
+        <div class="date-display">
+          <span id="dateLabel" class="date-label"></span>
+          <span id="dateSubLabel" class="date-sublabel"></span>
+        </div>
+        <button class="btn-nav" id="nextDay" aria-label="Next day">&#8594;</button>
+      </div>
+    </section>
+
+    <!-- Name input -->
+    <section class="name-section">
+      <div class="name-box">
+        <label for="playerName">Your Name</label>
+        <input
+          type="text"
+          id="playerName"
+          placeholder="Enter your name to book or cancel"
+          maxlength="40"
+          autocomplete="off"
+        />
+      </div>
+    </section>
+
+    <!-- Courts grid -->
+    <section class="courts-section" id="courtsSection">
+      <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+        <p>Loading schedule...</p>
+      </div>
+      <div class="courts-grid" id="courtsGrid" style="display:none;"></div>
+    </section>
+
+    <!-- Legend -->
+    <section class="legend">
+      <div class="legend-item">
+        <div class="legend-dot available"></div>
+        <span>Available</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot booked"></div>
+        <span>Booked</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot past"></div>
+        <span>Past</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <div class="modal-content" id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

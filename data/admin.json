@@ -1,0 +1,13 @@
+{
+  "adminPin": "1234",
+  "courts": [
+    "Court 1",
+    "Court 2"
+  ],
+  "lockedSlots": {},
+  "settings": {
+    "maxBookingsPerPlayerPerDay": 3,
+    "bookingWindowDays": 7,
+    "minCancelHours": 0
+  }
+}

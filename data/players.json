@@ -1,0 +1,221 @@
+{
+  "players": [
+    {
+      "id": "p_1",
+      "name": "Boody Nasef",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_2",
+      "name": "Mohamed Bishbish",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_3",
+      "name": "Salma Rasheed",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_4",
+      "name": "Sarah Rasheed",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_5",
+      "name": "Mohamed Khater",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_6",
+      "name": "Mahmoud Abouward",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_7",
+      "name": "Dido",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_8",
+      "name": "Beko",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_9",
+      "name": "Youssef Atef",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_10",
+      "name": "Menna Sallam",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_11",
+      "name": "Hamza Sallam",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_12",
+      "name": "Hassan Khater",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_13",
+      "name": "Amr Abouward",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_14",
+      "name": "Ahmed Abouward",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_15",
+      "name": "Mohamed Abouward",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_16",
+      "name": "Omar Sallam",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_17",
+      "name": "Raghda Khater",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_18",
+      "name": "Tooki Khater",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_19",
+      "name": "Mahmoud Khater",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_20",
+      "name": "Abdullah Khattab",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_21",
+      "name": "Ami",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_22",
+      "name": "Amenah Abouward",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_23",
+      "name": "Beeto Abouward",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_24",
+      "name": "Hala Sallam",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_25",
+      "name": "Hatem Khater",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_26",
+      "name": "Karim El Gammal",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_27",
+      "name": "Mohamed Khattab",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_28",
+      "name": "Nour Soliman",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_29",
+      "name": "Seif Sallam",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_30",
+      "name": "Tooli",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_31",
+      "name": "Bilo",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_32",
+      "name": "Amina Khater",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_33",
+      "name": "Zuki Khater",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_34",
+      "name": "Dojdoj",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_35",
+      "name": "Dosa",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    },
+    {
+      "id": "p_36",
+      "name": "Noureldin Sallam",
+      "createdAt": "2026-03-20T01:41:02.000Z",
+      "active": true
+    }
+  ],
+  "nextId": 37
+}

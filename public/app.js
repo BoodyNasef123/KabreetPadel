@@ -397,7 +397,7 @@ function openScoreModal(court, slot, booking, existingMatch) {
         <select id="t2p2" class="score-select">${allOpts}</select>
       </div>
       <div class="sets-section">
-        <label>Sets won (best of 3)</label>
+        <label>Sets won</label>
         <div class="set-row">
           <span>Team 1:</span>
           <input type="number" id="team1Sets" min="0" max="3" value="${existingT1Sets}">

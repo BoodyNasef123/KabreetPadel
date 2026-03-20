@@ -73,7 +73,7 @@ function getPlayerByName(name) {
   return players.find(p => p.name.toLowerCase() === name.toLowerCase() && p.active);
 }
 
-function createPlayer(name, phone) {
+function createPlayer(name) {
   const data = loadPlayers();
   const existing = data.players.find(p => p.name.toLowerCase() === name.toLowerCase());
   if (existing) {
@@ -87,7 +87,6 @@ function createPlayer(name, phone) {
   const player = {
     id: `p_${data.nextId++}`,
     name: name.trim(),
-    phone: phone || '',
     createdAt: new Date().toISOString(),
     active: true
   };

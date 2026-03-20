@@ -140,18 +140,6 @@ app.get('/api/players', (req, res) => {
   res.json(players.filter(p => p.active));
 });
 
-app.post('/api/players', (req, res) => {
-  const { name, phone } = req.body;
-  if (!name || !name.trim()) {
-    return res.status(400).json({ error: 'Name is required' });
-  }
-  const player = store.createPlayer(name.trim(), phone);
-  if (!player) {
-    return res.status(409).json({ error: 'Player already exists' });
-  }
-  io.emit('playerAdded', player);
-  res.json(player);
-});
 
 // Bookings
 app.get('/api/bookings/:date', (req, res) => {
@@ -321,9 +309,9 @@ app.get('/api/matches/:date', (req, res) => {
 });
 
 app.post('/api/matches', (req, res) => {
-  const { date, court, slot, team1, team2, scores, winner } = req.body;
+  const { date, court, slot, team1, team2, team1Sets, team2Sets, winner } = req.body;
 
-  if (!date || !court || !slot || !team1 || !team2 || !scores) {
+  if (!date || !court || !slot || !team1 || !team2) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -336,7 +324,8 @@ app.post('/api/matches', (req, res) => {
     slot,
     team1,
     team2,
-    scores,
+    team1Sets: team1Sets ?? 0,
+    team2Sets: team2Sets ?? 0,
     winner: winner || null,
     submittedAt: new Date().toISOString()
   };
@@ -395,11 +384,11 @@ app.post('/api/admin/auth', (req, res) => {
 
 // Admin: manage players
 app.post('/api/admin/players', requireAdmin, (req, res) => {
-  const { name, phone } = req.body;
+  const { name } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).json({ error: 'Name is required' });
   }
-  const player = store.createPlayer(name.trim(), phone);
+  const player = store.createPlayer(name.trim());
   if (!player) {
     return res.status(409).json({ error: 'Player already exists' });
   }
@@ -413,7 +402,6 @@ app.put('/api/admin/players/:id', requireAdmin, (req, res) => {
   if (!player) return res.status(404).json({ error: 'Player not found' });
 
   if (req.body.name) player.name = req.body.name.trim();
-  if (req.body.phone !== undefined) player.phone = req.body.phone;
   if (req.body.active !== undefined) player.active = req.body.active;
 
   store.savePlayers(data);
@@ -517,7 +505,7 @@ app.post('/api/admin/book', requireAdmin, (req, res) => {
 
 // Admin: update match scores
 app.put('/api/admin/matches', requireAdmin, (req, res) => {
-  const { date, court, slot, team1, team2, scores, winner } = req.body;
+  const { date, court, slot, team1, team2, team1Sets, team2Sets, winner } = req.body;
   if (!date || !court || !slot) return res.status(400).json({ error: 'Missing fields' });
 
   const matches = store.loadMatches();
@@ -525,7 +513,9 @@ app.put('/api/admin/matches', requireAdmin, (req, res) => {
   const key = `${court}|${slot}`;
 
   matches[date][key] = {
-    court, slot, team1, team2, scores,
+    court, slot, team1, team2,
+    team1Sets: team1Sets ?? 0,
+    team2Sets: team2Sets ?? 0,
     winner: winner || null,
     submittedAt: new Date().toISOString(),
     adminEdited: true

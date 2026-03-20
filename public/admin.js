@@ -137,7 +137,6 @@ function renderPlayers(filter = '') {
   let html = `
     <div class="table-row table-header">
       <span class="col-name">Name</span>
-      <span class="col-phone">Phone</span>
       <span class="col-status">Status</span>
       <span class="col-actions">Actions</span>
     </div>
@@ -146,7 +145,6 @@ function renderPlayers(filter = '') {
     html += `
       <div class="table-row ${!p.active ? 'row-inactive' : ''}">
         <span class="col-name">${p.name}</span>
-        <span class="col-phone">${p.phone || '--'}</span>
         <span class="col-status">${p.active ? '<span class="badge-active">Active</span>' : '<span class="badge-inactive">Inactive</span>'}</span>
         <span class="col-actions">
           <button class="btn-icon" onclick="editPlayer('${p.id}')" title="Edit">✏️</button>
@@ -168,16 +166,15 @@ document.getElementById('playerSearchAdmin').addEventListener('input', (e) => {
 document.getElementById('addPlayerAdminBtn').addEventListener('click', () => {
   const name = prompt('Player name:');
   if (!name) return;
-  const phone = prompt('Phone (optional):') || '';
-  addPlayer(name, phone);
+  addPlayer(name);
 });
 
-async function addPlayer(name, phone) {
+async function addPlayer(name) {
   try {
     const res = await fetch('/api/admin/players', {
       method: 'POST',
       headers: adminHeaders(),
-      body: JSON.stringify({ name, phone })
+      body: JSON.stringify({ name })
     });
     if (res.ok) {
       showToast(`${name} added!`, 'success');
@@ -194,13 +191,12 @@ async function editPlayer(id) {
   if (!player) return;
   const name = prompt('Name:', player.name);
   if (!name) return;
-  const phone = prompt('Phone:', player.phone || '');
 
   try {
     const res = await fetch(`/api/admin/players/${id}`, {
       method: 'PUT',
       headers: adminHeaders(),
-      body: JSON.stringify({ name, phone })
+      body: JSON.stringify({ name })
     });
     if (res.ok) {
       showToast('Updated', 'success');
@@ -421,7 +417,9 @@ function renderScores(matches) {
   `;
 
   entries.forEach(m => {
-    const scoreStr = m.scores ? m.scores.map(s => `${s[0]}-${s[1]}`).join(', ') : '--';
+    const scoreStr = (m.team1Sets !== undefined || m.team2Sets !== undefined)
+      ? `${m.team1Sets ?? 0}-${m.team2Sets ?? 0} sets`
+      : '--';
     const winnerStr = m.winner ? (m.winner === 'team1' ? (m.team1 || []).join(' & ') : (m.team2 || []).join(' & ')) : '';
     html += `
       <div class="table-row">

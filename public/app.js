@@ -124,52 +124,6 @@ async function fetchWeather() {
 }
 
 // =====================
-//  Dashboard
-// =====================
-function renderDashboard(stats) {
-  const container = document.getElementById('dashCards');
-  if (!stats) { container.innerHTML = ''; return; }
-
-  let html = '';
-  const courtStats = stats.courts || {};
-  Object.keys(courtStats).forEach(court => {
-    const s = courtStats[court];
-    const pct = Math.round((s.booked / s.total) * 100);
-    html += `
-      <div class="dash-card">
-        <div class="dash-card-title">${court}</div>
-        <div class="dash-progress">
-          <div class="dash-progress-bar" style="width:${pct}%"></div>
-        </div>
-        <div class="dash-card-stats">
-          <span class="dash-stat booked">${s.booked} booked</span>
-          <span class="dash-stat available">${s.available} free</span>
-        </div>
-      </div>
-    `;
-  });
-
-  html += `
-    <div class="dash-card dash-card-highlight">
-      <div class="dash-card-title">Today</div>
-      <div class="dash-big-num">${stats.uniquePlayers}</div>
-      <div class="dash-card-stats"><span class="dash-stat">unique players</span></div>
-    </div>
-  `;
-
-  container.innerHTML = html;
-}
-
-async function fetchStats() {
-  const dateKey = formatDateKey(currentDate);
-  try {
-    const res = await fetch(`/api/stats/${dateKey}`);
-    const stats = await res.json();
-    renderDashboard(stats);
-  } catch { /* ignore */ }
-}
-
-// =====================
 //  Player Selector
 // =====================
 async function fetchPlayers() {
@@ -184,7 +138,6 @@ async function fetchPlayers() {
 function setupPlayerSelector() {
   const input = document.getElementById('playerSearch');
   const dropdown = document.getElementById('playerDropdown');
-  const addBtn = document.getElementById('addPlayerBtn');
   const clearBtn = document.getElementById('clearPlayerBtn');
 
   // Restore from localStorage
@@ -204,7 +157,7 @@ function setupPlayerSelector() {
     }
     const filtered = players.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
     if (filtered.length === 0) {
-      dropdown.innerHTML = `<div class="dropdown-empty">No players found. Click + to register.</div>`;
+      dropdown.innerHTML = `<div class="dropdown-empty">No players found. Ask an admin to register you.</div>`;
       dropdown.style.display = 'block';
       return;
     }
@@ -230,7 +183,6 @@ function setupPlayerSelector() {
     if (input.value.trim()) input.dispatchEvent(new Event('input'));
   });
 
-  addBtn.addEventListener('click', openAddPlayerModal);
   clearBtn.addEventListener('click', clearPlayer);
 }
 
@@ -252,54 +204,6 @@ function clearPlayer() {
   document.getElementById('selectedPlayerDisplay').style.display = 'none';
   document.getElementById('playerSearch').style.display = 'block';
   document.getElementById('playerSearch').value = '';
-}
-
-function openAddPlayerModal() {
-  const overlay = document.getElementById('modalOverlay');
-  const content = document.getElementById('modalContent');
-
-  content.innerHTML = `
-    <h3>Register New Player</h3>
-    <p class="modal-subtitle">Add yourself or someone else to the player list.</p>
-    <div class="modal-form">
-      <label>Name <span style="color:var(--red)">*</span></label>
-      <input type="text" id="newPlayerName" maxlength="40" placeholder="Full name" autofocus />
-      <label>Phone (optional)</label>
-      <input type="text" id="newPlayerPhone" maxlength="20" placeholder="Phone number" />
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-primary" id="savePlayerBtn">Register Player</button>
-      <button class="btn btn-secondary" id="closeModalBtn">Cancel</button>
-    </div>
-  `;
-
-  document.getElementById('savePlayerBtn').addEventListener('click', async () => {
-    const name = document.getElementById('newPlayerName').value.trim();
-    const phone = document.getElementById('newPlayerPhone').value.trim();
-    if (!name) { showToast('Name is required', 'error'); return; }
-
-    try {
-      const res = await fetch('/api/players', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        players.push(data);
-        selectPlayer(data.id, data.name);
-        closeModal();
-        showToast(`${name} registered!`, 'success');
-      } else {
-        showToast(data.error || 'Could not register', 'error');
-      }
-    } catch {
-      showToast('Network error', 'error');
-    }
-  });
-
-  document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-  overlay.classList.add('active');
 }
 
 // =====================
@@ -374,8 +278,8 @@ function renderCourts() {
         nameText = playersList.join(', ');
         whenText = timeAgo(booking.bookedAt);
 
-        if (match && match.scores) {
-          scoreText = match.scores.map(s => `${s[0]}-${s[1]}`).join(' ');
+        if (match && (match.team1Sets !== undefined || match.team2Sets !== undefined)) {
+          scoreText = `${match.team1Sets ?? 0}-${match.team2Sets ?? 0} sets`;
         }
       }
 
@@ -410,7 +314,7 @@ function openModal(court, slot, booking, match) {
 
   if (booking) {
     const playersList = booking.players || [booking.name];
-    const hasMatch = match && match.scores;
+    const hasMatch = match && (match.team1Sets !== undefined || match.team2Sets !== undefined);
 
     content.innerHTML = `
       <h3>Slot Booked</h3>
@@ -428,7 +332,7 @@ function openModal(court, slot, booking, match) {
             <span class="vs">vs</span>
             <span class="${match.winner === 'team2' ? 'winner' : ''}">${(match.team2 || []).join(' & ')}</span>
           </div>
-          <div class="match-scores">${match.scores.map(s => `<span>${s[0]}-${s[1]}</span>`).join(' ')}</div>
+          <div class="match-scores"><span>${match.team1Sets ?? 0} - ${match.team2Sets ?? 0} sets</span></div>
         </div>
       ` : ''}
       <div class="modal-actions">
@@ -496,9 +400,9 @@ function openScoreModal(court, slot, booking, existingMatch) {
   const t1p2 = existingMatch?.team1?.[1] || playersList[1] || '';
   const t2p1 = existingMatch?.team2?.[0] || playersList[2] || '';
   const t2p2 = existingMatch?.team2?.[1] || playersList[3] || '';
-  const s = existingMatch?.scores || [[0,0],[0,0],[0,0]];
+  const existingT1Sets = existingMatch?.team1Sets ?? 0;
+  const existingT2Sets = existingMatch?.team2Sets ?? 0;
 
-  const playerOpts = playersList.map(p => `<option value="${p}">${p}</option>`).join('');
   const allOpts = `<option value="">--</option>` + players.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
 
   content.innerHTML = `
@@ -516,10 +420,14 @@ function openScoreModal(court, slot, booking, existingMatch) {
         <select id="t2p2" class="score-select">${allOpts}</select>
       </div>
       <div class="sets-section">
-        <label>Sets (best of 3)</label>
-        <div class="set-row"><span>Set 1:</span><input type="number" id="s1a" min="0" max="7" value="${s[0][0]}"> - <input type="number" id="s1b" min="0" max="7" value="${s[0][1]}"></div>
-        <div class="set-row"><span>Set 2:</span><input type="number" id="s2a" min="0" max="7" value="${s[1][0]}"> - <input type="number" id="s2b" min="0" max="7" value="${s[1][1]}"></div>
-        <div class="set-row"><span>Set 3:</span><input type="number" id="s3a" min="0" max="7" value="${s[2]?.[0] || 0}"> - <input type="number" id="s3b" min="0" max="7" value="${s[2]?.[1] || 0}"></div>
+        <label>Sets won (best of 3)</label>
+        <div class="set-row">
+          <span>Team 1:</span>
+          <input type="number" id="team1Sets" min="0" max="3" value="${existingT1Sets}">
+          <span style="margin:0 8px">—</span>
+          <span>Team 2:</span>
+          <input type="number" id="team2Sets" min="0" max="3" value="${existingT2Sets}">
+        </div>
       </div>
     </div>
     <div class="modal-actions">
@@ -528,7 +436,7 @@ function openScoreModal(court, slot, booking, existingMatch) {
     </div>
   `;
 
-  // Pre-select values
+  // Pre-select player values
   if (t1p1) document.getElementById('t1p1').value = t1p1;
   if (t1p2) document.getElementById('t1p2').value = t1p2;
   if (t2p1) document.getElementById('t2p1').value = t2p1;
@@ -537,19 +445,15 @@ function openScoreModal(court, slot, booking, existingMatch) {
   document.getElementById('saveScoreBtn').addEventListener('click', async () => {
     const team1 = [document.getElementById('t1p1').value, document.getElementById('t1p2').value].filter(Boolean);
     const team2 = [document.getElementById('t2p1').value, document.getElementById('t2p2').value].filter(Boolean);
-    const scores = [
-      [parseInt(document.getElementById('s1a').value) || 0, parseInt(document.getElementById('s1b').value) || 0],
-      [parseInt(document.getElementById('s2a').value) || 0, parseInt(document.getElementById('s2b').value) || 0],
-      [parseInt(document.getElementById('s3a').value) || 0, parseInt(document.getElementById('s3b').value) || 0]
-    ];
+    const team1Sets = parseInt(document.getElementById('team1Sets').value) || 0;
+    const team2Sets = parseInt(document.getElementById('team2Sets').value) || 0;
 
-    // Auto-detect winner
-    let t1wins = 0, t2wins = 0;
-    scores.forEach(([a, b]) => {
-      if (a > b) t1wins++;
-      else if (b > a) t2wins++;
-    });
-    const winner = t1wins >= 2 ? 'team1' : t2wins >= 2 ? 'team2' : null;
+    if (team1.length === 0 || team2.length === 0) {
+      showToast('Please select at least one player per team', 'error');
+      return;
+    }
+
+    const winner = team1Sets > team2Sets ? 'team1' : team2Sets > team1Sets ? 'team2' : null;
 
     try {
       const res = await fetch('/api/matches', {
@@ -557,7 +461,7 @@ function openScoreModal(court, slot, booking, existingMatch) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: formatDateKey(currentDate),
-          court, slot, team1, team2, scores, winner
+          court, slot, team1, team2, team1Sets, team2Sets, winner
         })
       });
       if (res.ok) {
@@ -713,7 +617,6 @@ document.getElementById('prevDay').addEventListener('click', () => {
   updateDateDisplay();
   showSpinner();
   fetchBookings();
-  fetchStats();
   fetchMatches();
 });
 
@@ -722,7 +625,6 @@ document.getElementById('nextDay').addEventListener('click', () => {
   updateDateDisplay();
   showSpinner();
   fetchBookings();
-  fetchStats();
   fetchMatches();
 });
 
@@ -752,12 +654,6 @@ function initSocket() {
     if (date !== formatDateKey(currentDate)) return;
     if (bookings[court]) delete bookings[court][slot];
     renderCourts();
-  });
-
-  socket.on('statsUpdate', ({ date, stats }) => {
-    if (date === formatDateKey(currentDate)) {
-      renderDashboard(stats);
-    }
   });
 
   socket.on('matchUpdate', ({ date, court, slot, match }) => {
@@ -809,7 +705,7 @@ async function init() {
   await fetchPlayers();
   setupPlayerSelector();
 
-  await Promise.all([fetchBookings(), fetchStats(), fetchMatches()]);
+  await Promise.all([fetchBookings(), fetchMatches()]);
 
   fetchWeather();
   setInterval(fetchWeather, 30 * 60 * 1000);

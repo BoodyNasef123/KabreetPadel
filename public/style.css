@@ -58,6 +58,133 @@ body {
 }
 
 /* =====================
+   Player Login Overlay
+   ===================== */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(145deg, #1a5276 0%, #27ae60 100%);
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+.login-panel {
+  background: var(--card-bg);
+  border-radius: 24px;
+  padding: 32px 28px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-logo-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.login-logo h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.login-logo p {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.login-form h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.login-hint {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin-bottom: 14px;
+}
+
+.login-search-wrap input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  color: var(--text);
+  background: #fafbfc;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 10px;
+}
+
+.login-search-wrap input:focus {
+  border-color: var(--blue);
+  background: #fff;
+}
+
+.login-player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.login-player-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  background: var(--bg);
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+  text-align: left;
+  width: 100%;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.login-player-btn:hover {
+  background: #eafaf1;
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+
+.login-player-btn:active {
+  transform: scale(0.98);
+}
+
+.login-player-btn svg {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.login-not-registered {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  text-align: center;
+}
+
+/* =====================
    Header
    ===================== */
 header {
@@ -128,6 +255,33 @@ header {
 }
 
 .header-btn:hover {
+  background: rgba(255,255,255,0.35);
+}
+
+.header-player {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: background 0.15s;
+  max-width: 160px;
+  overflow: hidden;
+}
+
+.header-player span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-player:hover {
   background: rgba(255,255,255,0.35);
 }
 
@@ -1190,5 +1344,26 @@ main {
   .skeleton-slot {
     background: linear-gradient(90deg, #252b3b 25%, #2f3649 50%, #252b3b 75%);
     background-size: 200% 100%;
+  }
+
+  .login-panel {
+    background: var(--card-bg);
+  }
+
+  .login-search-wrap input {
+    background: #1e2535;
+    color: var(--text);
+    border-color: #3a4155;
+  }
+
+  .login-player-btn {
+    background: #1e2535;
+    border-color: #3a4155;
+    color: var(--text);
+  }
+
+  .login-player-btn:hover {
+    background: #1e3a2e;
+    border-color: var(--green);
   }
 }

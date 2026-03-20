@@ -10,7 +10,6 @@ let currentDate = new Date();
 let socket;
 let players = [];
 let selectedPlayer = null; // { id, name }
-let dropdownFocusIndex = -1;
 let navLocked = false;
 
 // =====================
@@ -74,9 +73,7 @@ function showToast(msg, type = '') {
   t.textContent = msg;
   t.className = 'toast show ' + type;
   clearTimeout(t._timer);
-  t._timer = setTimeout(() => {
-    t.className = 'toast';
-  }, 3200);
+  t._timer = setTimeout(() => { t.className = 'toast'; }, 3200);
 }
 
 function timeAgo(isoString) {
@@ -102,7 +99,7 @@ function updateClock() {
 }
 
 // =====================
-//  Player Selector
+//  Login / Player Selection
 // =====================
 async function fetchPlayers() {
   try {
@@ -113,142 +110,69 @@ async function fetchPlayers() {
   }
 }
 
-function setupPlayerSelector() {
-  const input = document.getElementById('playerSearch');
-  const dropdown = document.getElementById('playerDropdown');
-  const clearBtn = document.getElementById('clearPlayerBtn');
+function showLoginOverlay() {
+  const overlay = document.getElementById('loginOverlay');
+  const searchInput = document.getElementById('loginPlayerSearch');
 
-  // Restore from localStorage
-  const saved = localStorage.getItem('selectedPlayer');
-  if (saved) {
-    try {
-      selectedPlayer = JSON.parse(saved);
-      showSelectedPlayer();
-    } catch { selectedPlayer = null; }
+  overlay.style.display = 'flex';
+  searchInput.value = '';
+  renderLoginList('');
+
+  searchInput.oninput = () => renderLoginList(searchInput.value.trim().toLowerCase());
+  setTimeout(() => searchInput.focus(), 100);
+}
+
+function renderLoginList(query) {
+  const list = document.getElementById('loginPlayerList');
+  const filtered = query
+    ? players.filter(p => p.active !== false && p.name.toLowerCase().includes(query))
+    : players.filter(p => p.active !== false);
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<p style="text-align:center;color:var(--text-light);padding:16px 0;">
+      ${query ? 'No players match "' + query + '".' : 'No players registered yet.'}
+    </p>`;
+    return;
   }
 
-  input.addEventListener('input', () => {
-    dropdownFocusIndex = -1;
-    const q = input.value.trim().toLowerCase();
-    if (q.length === 0) {
-      dropdown.style.display = 'none';
-      clearInputError();
-      return;
-    }
-    const filtered = players.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
-    if (filtered.length === 0) {
-      dropdown.innerHTML = `<div class="dropdown-empty">No players found. Ask an admin to register you.</div>`;
-      dropdown.style.display = 'block';
-      return;
-    }
-    dropdown.innerHTML = filtered.map((p, i) =>
-      `<div class="dropdown-item" role="option" data-id="${p.id}" data-name="${p.name}" data-index="${i}">${p.name}</div>`
-    ).join('');
-    dropdown.style.display = 'block';
+  list.innerHTML = filtered.map(p =>
+    `<button class="login-player-btn" data-id="${p.id}" data-name="${p.name}">
+       <i data-lucide="user" class="icon"></i>${p.name}
+     </button>`
+  ).join('');
 
-    dropdown.querySelectorAll('.dropdown-item').forEach(el => {
-      el.addEventListener('click', () => {
-        selectPlayer(el.dataset.id, el.dataset.name);
-        dropdown.style.display = 'none';
-        input.value = '';
-        dropdownFocusIndex = -1;
-      });
-      el.addEventListener('mouseenter', () => {
-        dropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('dropdown-item--focused'));
-        el.classList.add('dropdown-item--focused');
-      });
-    });
+  list.querySelectorAll('.login-player-btn').forEach(btn => {
+    btn.addEventListener('click', () => loginAs(btn.dataset.id, btn.dataset.name));
   });
 
-  input.addEventListener('keydown', (e) => {
-    const items = dropdown.querySelectorAll('.dropdown-item');
-    if (!items.length || dropdown.style.display === 'none') return;
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      dropdownFocusIndex = Math.min(dropdownFocusIndex + 1, items.length - 1);
-      updateDropdownFocus(items);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      dropdownFocusIndex = Math.max(dropdownFocusIndex - 1, 0);
-      updateDropdownFocus(items);
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (dropdownFocusIndex >= 0 && items[dropdownFocusIndex]) {
-        const el = items[dropdownFocusIndex];
-        selectPlayer(el.dataset.id, el.dataset.name);
-        dropdown.style.display = 'none';
-        input.value = '';
-        dropdownFocusIndex = -1;
-      }
-    } else if (e.key === 'Escape' || e.key === 'Tab') {
-      dropdown.style.display = 'none';
-      dropdownFocusIndex = -1;
-    }
-  });
-
-  input.addEventListener('blur', () => {
-    setTimeout(() => {
-      dropdown.style.display = 'none';
-      dropdownFocusIndex = -1;
-      if (input.value.trim() && !selectedPlayer) {
-        input.classList.add('input-error');
-        let errEl = document.getElementById('playerErrorMsg');
-        if (!errEl) {
-          errEl = document.createElement('p');
-          errEl.id = 'playerErrorMsg';
-          errEl.className = 'player-error-msg';
-          errEl.textContent = 'Select a player from the list.';
-          input.parentNode.appendChild(errEl);
-        }
-      }
-    }, 200);
-  });
-
-  input.addEventListener('focus', () => {
-    clearInputError();
-    if (input.value.trim()) input.dispatchEvent(new Event('input'));
-  });
-
-  clearBtn.addEventListener('click', clearPlayer);
+  lucide.createIcons();
 }
 
-function updateDropdownFocus(items) {
-  items.forEach((item, i) => {
-    item.classList.toggle('dropdown-item--focused', i === dropdownFocusIndex);
-  });
-  if (items[dropdownFocusIndex]) {
-    items[dropdownFocusIndex].scrollIntoView({ block: 'nearest' });
-  }
-}
-
-function clearInputError() {
-  document.getElementById('playerSearch').classList.remove('input-error');
-  const errEl = document.getElementById('playerErrorMsg');
-  if (errEl) errEl.remove();
-}
-
-function selectPlayer(id, name) {
+function loginAs(id, name) {
   selectedPlayer = { id, name };
   localStorage.setItem('selectedPlayer', JSON.stringify(selectedPlayer));
-  showSelectedPlayer();
-  clearInputError();
+  document.getElementById('loginOverlay').style.display = 'none';
+  updateHeaderChip();
 }
 
-function showSelectedPlayer() {
-  document.getElementById('selectedPlayerDisplay').style.display = 'flex';
-  document.getElementById('selectedPlayerName').textContent = selectedPlayer.name;
-  document.getElementById('playerSearch').style.display = 'none';
+function updateHeaderChip() {
+  const chip = document.getElementById('headerPlayerChip');
+  const nameEl = document.getElementById('headerPlayerName');
+  if (selectedPlayer) {
+    nameEl.textContent = selectedPlayer.name;
+    chip.style.display = 'flex';
+  } else {
+    chip.style.display = 'none';
+  }
 }
 
-function clearPlayer() {
+document.getElementById('headerPlayerChip').addEventListener('click', () => {
+  // Switch player — show login overlay again
   selectedPlayer = null;
   localStorage.removeItem('selectedPlayer');
-  document.getElementById('selectedPlayerDisplay').style.display = 'none';
-  document.getElementById('playerSearch').style.display = 'block';
-  document.getElementById('playerSearch').value = '';
-  clearInputError();
-}
+  updateHeaderChip();
+  showLoginOverlay();
+});
 
 // =====================
 //  UI - Date
@@ -285,8 +209,8 @@ function showSkeleton() {
 }
 
 function hideSkeleton() {
-  const skeletonEl = document.getElementById('courtsSkeleton');
-  if (skeletonEl) skeletonEl.style.display = 'none';
+  const el = document.getElementById('courtsSkeleton');
+  if (el) el.style.display = 'none';
 }
 
 // =====================
@@ -315,7 +239,6 @@ function renderCourts() {
     `;
 
     grid.appendChild(card);
-
     const slotsContainer = card.querySelector('.court-slots');
 
     timeSlots.forEach(slot => {
@@ -324,8 +247,6 @@ function renderCourts() {
       const locked = isSlotLocked(court, slot);
       const matchKey = `${court}|${slot}`;
       const match = dateMatches[matchKey];
-
-      const el = document.createElement('div');
 
       let statusClass = 'available';
       let badge = 'Free';
@@ -353,6 +274,7 @@ function renderCourts() {
       }
 
       const isClickable = (!past && !locked) || !!booking;
+      const el = document.createElement('div');
       el.className = `slot ${statusClass}`;
       if (isClickable) {
         el.setAttribute('role', 'button');
@@ -438,8 +360,8 @@ function showBookedModal(court, slot, booking, match, content) {
     document.getElementById('cancelBtn').addEventListener('click', () => {
       const name = getPlayerName();
       const pid = getPlayerId();
-      if (!name && !pid) {
-        showToast('Select your player first to cancel', 'error');
+      if (!name) {
+        showToast('Log in first to cancel', 'error');
         closeModal();
         return;
       }
@@ -482,13 +404,13 @@ function showBookSlotModal(court, slot, content) {
   const dateStr = currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   content.innerHTML = `
     <h3>Book This Slot</h3>
-    <p class="modal-subtitle">Reserve this court for yourself or your group.</p>
+    <p class="modal-subtitle">Reserve this court for your group.</p>
     <div class="modal-info">
       <strong>${court}</strong><br>
       ${slot} · ${dateStr}
     </div>
     ${!name
-      ? `<p style="color:var(--red);font-size:0.85rem;margin-bottom:12px;">Select a player from the list above first.</p>`
+      ? `<p style="color:var(--red);font-size:0.85rem;margin-bottom:12px;">Please log in first to book a slot.</p>`
       : `<p style="font-size:0.9rem;margin-bottom:12px;">Booking as <strong>${name}</strong></p>`
     }
     <div class="modal-actions">
@@ -530,11 +452,14 @@ function showBookConfirmModal(court, slot, name, playerId, content) {
   });
 }
 
+// =====================
+//  Score Modal — doubles (2 per team required)
+// =====================
 function openScoreModal(court, slot, booking, existingMatch) {
   const content = document.getElementById('modalContent');
   const playersList = booking.players || [booking.name];
-  const isSingles = playersList.length <= 2;
 
+  // Pre-fill from existing match or booking players
   const t1p1 = existingMatch?.team1?.[0] || playersList[0] || '';
   const t1p2 = existingMatch?.team1?.[1] || playersList[1] || '';
   const t2p1 = existingMatch?.team2?.[0] || playersList[2] || '';
@@ -542,7 +467,7 @@ function openScoreModal(court, slot, booking, existingMatch) {
   const existingT1Sets = existingMatch?.team1Sets ?? 0;
   const existingT2Sets = existingMatch?.team2Sets ?? 0;
 
-  const allOpts = `<option value="">--</option>` + players.map(p =>
+  const allOpts = `<option value="">— Select —</option>` + players.map(p =>
     `<option value="${p.name}">${p.name}</option>`
   ).join('');
 
@@ -553,12 +478,12 @@ function openScoreModal(court, slot, booking, existingMatch) {
       <div class="team-section">
         <label class="team-section-label-1">Team 1</label>
         <select id="t1p1" class="score-select">${allOpts}</select>
-        ${!isSingles ? `<select id="t1p2" class="score-select">${allOpts}</select>` : `<input type="hidden" id="t1p2" value="">`}
+        <select id="t1p2" class="score-select">${allOpts}</select>
       </div>
       <div class="team-section">
         <label class="team-section-label-2">Team 2</label>
         <select id="t2p1" class="score-select">${allOpts}</select>
-        ${!isSingles ? `<select id="t2p2" class="score-select">${allOpts}</select>` : `<input type="hidden" id="t2p2" value="">`}
+        <select id="t2p2" class="score-select">${allOpts}</select>
       </div>
       <div class="sets-section">
         <label>Sets won</label>
@@ -577,22 +502,27 @@ function openScoreModal(court, slot, booking, existingMatch) {
     </div>
   `;
 
+  // Pre-select values
   if (t1p1) document.getElementById('t1p1').value = t1p1;
-  if (!isSingles && t1p2) document.getElementById('t1p2').value = t1p2;
+  if (t1p2) document.getElementById('t1p2').value = t1p2;
   if (t2p1) document.getElementById('t2p1').value = t2p1;
-  if (!isSingles && t2p2) document.getElementById('t2p2').value = t2p2;
+  if (t2p2) document.getElementById('t2p2').value = t2p2;
 
   document.getElementById('saveScoreBtn').addEventListener('click', async () => {
-    const team1 = [document.getElementById('t1p1').value, document.getElementById('t1p2').value].filter(Boolean);
-    const team2 = [document.getElementById('t2p1').value, document.getElementById('t2p2').value].filter(Boolean);
-    const team1Sets = parseInt(document.getElementById('team1Sets').value) || 0;
-    const team2Sets = parseInt(document.getElementById('team2Sets').value) || 0;
+    const t1p1v = document.getElementById('t1p1').value;
+    const t1p2v = document.getElementById('t1p2').value;
+    const t2p1v = document.getElementById('t2p1').value;
+    const t2p2v = document.getElementById('t2p2').value;
 
-    if (team1.length === 0 || team2.length === 0) {
-      showToast('Please select at least one player per team', 'error');
+    if (!t1p1v || !t1p2v || !t2p1v || !t2p2v) {
+      showToast('Each team needs exactly 2 players', 'error');
       return;
     }
 
+    const team1 = [t1p1v, t1p2v];
+    const team2 = [t2p1v, t2p2v];
+    const team1Sets = parseInt(document.getElementById('team1Sets').value) || 0;
+    const team2Sets = parseInt(document.getElementById('team2Sets').value) || 0;
     const winner = team1Sets > team2Sets ? 'team1' : team2Sets > team1Sets ? 'team2' : null;
 
     try {
@@ -630,7 +560,6 @@ document.getElementById('modalOverlay').addEventListener('click', (e) => {
   if (e.target === document.getElementById('modalOverlay')) closeModal();
 });
 
-// Escape key closes any open modal
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeModal();
@@ -865,23 +794,41 @@ async function init() {
   }
 
   await fetchPlayers();
-  setupPlayerSelector();
 
+  // Restore saved player or prompt login
+  const saved = localStorage.getItem('selectedPlayer');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      // Verify player still exists and is active
+      const stillActive = players.find(p => p.id === parsed.id && p.active !== false);
+      if (stillActive) {
+        selectedPlayer = parsed;
+        updateHeaderChip();
+      } else {
+        // Player was deactivated — show login
+        localStorage.removeItem('selectedPlayer');
+        showLoginOverlay();
+      }
+    } catch {
+      showLoginOverlay();
+    }
+  } else {
+    showLoginOverlay();
+  }
+
+  // Load courts in parallel (visible behind login overlay if needed)
   showSkeleton();
   lockNav(true);
   await Promise.all([fetchBookings(), fetchMatches()]);
   lockNav(false);
 
-  // Refresh time-based "past" status every minute
   setInterval(() => {
     const todayKey = formatDateKey(new Date());
-    const currentKey = formatDateKey(currentDate);
-    if (currentKey === todayKey) renderCourts();
+    if (formatDateKey(currentDate) === todayKey) renderCourts();
   }, 60000);
 
-  // Initialize static header icons
   lucide.createIcons();
-
   initSocket();
 }
 

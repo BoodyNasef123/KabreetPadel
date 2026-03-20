@@ -40,35 +40,65 @@ function getSettings() {
 let weatherCache = { data: null, fetchedAt: 0 };
 const WEATHER_CACHE_MS = 30 * 60 * 1000; // 30 min
 
-function fetchWeatherFromAPI() {
+function fetchFromGoogle() {
   return new Promise((resolve, reject) => {
     const url = `https://weather.googleapis.com/v1/currentConditions:lookup?key=${GOOGLE_WEATHER_API_KEY}&location.latitude=${WEATHER_LAT}&location.longitude=${WEATHER_LON}&languageCode=en&unitsSystem=METRIC`;
-
     https.get(url, { timeout: 5000 }, (res) => {
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
         try {
           const json = JSON.parse(body);
-          if (json.error) {
-            return reject(new Error(json.error.message || 'Google Weather API error'));
-          }
-          const c = json.currentConditions || {};
+          if (json.error || !json.currentConditions) return reject(new Error('Google Weather API error'));
+          const c = json.currentConditions;
           resolve({
-            temp_c: Math.round(c.temperature?.degrees ?? '--'),
-            feels_like_c: Math.round(c.feelsLikeTemperature?.degrees ?? '--'),
+            temp_c: Math.round(c.temperature?.degrees ?? 0),
+            feels_like_c: Math.round(c.feelsLikeTemperature?.degrees ?? 0),
             condition: c.weatherCondition?.description?.text || 'Unknown',
-            humidity: Math.round(c.relativeHumidity ?? '--'),
-            wind_kph: Math.round(c.wind?.speed?.value ?? '--'),
+            humidity: Math.round(c.relativeHumidity ?? 0),
+            wind_kph: Math.round(c.wind?.speed?.value ?? 0),
             icon_code: c.weatherCondition?.type || 'CLEAR'
           });
-        } catch {
-          reject(new Error('Failed to parse Google weather response'));
-        }
+        } catch { reject(new Error('Failed to parse Google weather')); }
       });
       res.on('error', reject);
     }).on('error', reject);
   });
+}
+
+function fetchFromWttr() {
+  return new Promise((resolve, reject) => {
+    https.get('https://wttr.in/?format=j1', { timeout: 5000 }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(body);
+          const current = json.current_condition?.[0] || {};
+          resolve({
+            temp_c: current.temp_C || '--',
+            feels_like_c: current.FeelsLikeC || '--',
+            condition: current.weatherDesc?.[0]?.value || 'Unknown',
+            humidity: current.humidity || '--',
+            wind_kph: current.windspeedKmph || '--',
+            icon_code: current.weatherCode || '113'
+          });
+        } catch { reject(new Error('Failed to parse wttr.in')); }
+      });
+      res.on('error', reject);
+    }).on('error', reject);
+  });
+}
+
+async function fetchWeatherFromAPI() {
+  if (GOOGLE_WEATHER_API_KEY) {
+    try {
+      return await fetchFromGoogle();
+    } catch (err) {
+      console.warn('Google Weather API failed, falling back to wttr.in:', err.message);
+    }
+  }
+  return fetchFromWttr();
 }
 
 // =====================

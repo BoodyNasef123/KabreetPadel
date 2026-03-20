@@ -92,6 +92,19 @@ function timeAgo(isoString) {
 function weatherIcon(type) {
   if (!type) return '🌤️';
   const t = String(type).toUpperCase();
+  // wttr.in numeric codes
+  const n = parseInt(t);
+  if (!isNaN(n)) {
+    if (n === 113) return '☀️';
+    if (n === 116) return '⛅';
+    if (n === 119 || n === 122) return '☁️';
+    if ([176,263,266,293,296,299,302,305,308,353,356,359].includes(n)) return '🌧️';
+    if ([200,386,389,392,395].includes(n)) return '⛈️';
+    if ([227,230,323,326,329,332,335,338,368,371,374,377].includes(n)) return '🌨️';
+    if ([143,248,260].includes(n)) return '🌫️';
+    return '🌤️';
+  }
+  // Google Weather API condition types
   if (t === 'CLEAR') return '☀️';
   if (t === 'MOSTLY_CLEAR') return '🌤️';
   if (t === 'PARTLY_CLOUDY') return '⛅';

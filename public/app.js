@@ -89,15 +89,19 @@ function timeAgo(isoString) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-function weatherIcon(code) {
-  const c = parseInt(code);
-  if (c === 113) return '☀️';
-  if (c === 116) return '⛅';
-  if (c === 119 || c === 122) return '☁️';
-  if ([176, 263, 266, 293, 296, 299, 302, 305, 308, 353, 356, 359].includes(c)) return '🌧️';
-  if ([200, 386, 389, 392, 395].includes(c)) return '⛈️';
-  if ([227, 230, 323, 326, 329, 332, 335, 338, 368, 371, 374, 377].includes(c)) return '🌨️';
-  if ([143, 248, 260].includes(c)) return '🌫️';
+function weatherIcon(type) {
+  if (!type) return '🌤️';
+  const t = String(type).toUpperCase();
+  if (t === 'CLEAR') return '☀️';
+  if (t === 'MOSTLY_CLEAR') return '🌤️';
+  if (t === 'PARTLY_CLOUDY') return '⛅';
+  if (t === 'MOSTLY_CLOUDY') return '🌥️';
+  if (t === 'CLOUDY') return '☁️';
+  if (t === 'WINDY' || t === 'BREEZY') return '💨';
+  if (t.includes('FOG') || t.includes('HAZE') || t.includes('SMOKE') || t.includes('DUST')) return '🌫️';
+  if (t === 'THUNDERSTORM' || t.includes('THUNDER')) return '⛈️';
+  if (t.includes('SNOW') || t.includes('ICY') || t.includes('HAIL') || t.includes('FREEZING')) return '🌨️';
+  if (t.includes('RAIN') || t.includes('DRIZZLE') || t.includes('SHOWER')) return '🌧️';
   return '🌤️';
 }
 

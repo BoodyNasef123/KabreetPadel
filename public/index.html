@@ -16,14 +16,40 @@
           <p class="subtitle">Family Retreat Court Booking</p>
         </div>
       </div>
-      <div class="live-badge">
-        <span class="live-dot"></span>
-        Live
+      <div class="header-actions">
+        <button class="header-btn" id="leaderboardBtn" title="Leaderboard">🏆</button>
+        <div class="live-badge">
+          <span class="live-dot"></span>
+          Live
+        </div>
       </div>
     </div>
   </header>
 
   <main>
+    <!-- Info bar: clock + weather -->
+    <section class="info-bar" id="infoBar">
+      <div class="info-clock">
+        <span class="info-icon">🕐</span>
+        <div>
+          <span id="currentTime" class="clock-time">--:--</span>
+          <span id="currentDateInfo" class="clock-date">---</span>
+        </div>
+      </div>
+      <div class="info-weather" id="weatherWidget">
+        <span class="info-icon" id="weatherIcon">🌤</span>
+        <div>
+          <span id="weatherTemp" class="weather-temp">--</span>
+          <span id="weatherCondition" class="weather-cond">Loading...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mini Dashboard -->
+    <section class="dashboard" id="dashboard">
+      <div class="dash-cards" id="dashCards"></div>
+    </section>
+
     <!-- Date selector -->
     <section class="date-section">
       <div class="date-nav">
@@ -36,17 +62,28 @@
       </div>
     </section>
 
-    <!-- Name input -->
+    <!-- Player selector -->
     <section class="name-section">
       <div class="name-box">
-        <label for="playerName">Your Name</label>
-        <input
-          type="text"
-          id="playerName"
-          placeholder="Enter your name to book or cancel"
-          maxlength="40"
-          autocomplete="off"
-        />
+        <label for="playerSelect">Select Player</label>
+        <div class="player-select-row">
+          <div class="player-input-wrap">
+            <input
+              type="text"
+              id="playerSearch"
+              placeholder="Search or type your name..."
+              maxlength="40"
+              autocomplete="off"
+            />
+            <div class="player-dropdown" id="playerDropdown"></div>
+          </div>
+          <button class="btn-add-player" id="addPlayerBtn" title="Register new player">+</button>
+        </div>
+        <input type="hidden" id="selectedPlayerId" />
+        <div class="selected-player" id="selectedPlayerDisplay" style="display:none;">
+          <span id="selectedPlayerName"></span>
+          <button class="btn-clear-player" id="clearPlayerBtn">&times;</button>
+        </div>
       </div>
     </section>
 
@@ -70,6 +107,10 @@
         <span>Booked</span>
       </div>
       <div class="legend-item">
+        <div class="legend-dot locked"></div>
+        <span>Locked</span>
+      </div>
+      <div class="legend-item">
         <div class="legend-dot past"></div>
         <span>Past</span>
       </div>
@@ -81,6 +122,18 @@
     <div class="modal" id="modal">
       <button class="modal-close" id="modalClose">&times;</button>
       <div class="modal-content" id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- Leaderboard overlay -->
+  <div class="modal-overlay" id="leaderboardOverlay">
+    <div class="modal leaderboard-modal">
+      <button class="modal-close" id="leaderboardClose">&times;</button>
+      <div class="modal-content" id="leaderboardContent">
+        <h3>🏆 Leaderboard</h3>
+        <p class="modal-subtitle">Player rankings by wins</p>
+        <div id="leaderboardTable"></div>
+      </div>
     </div>
   </div>
 

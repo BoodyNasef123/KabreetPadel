@@ -4,8 +4,12 @@
 let courts = [];
 let timeSlots = [];
 let bookings = {};
+let matches = {};
+let lockedSlots = {};
 let currentDate = new Date();
 let socket;
+let players = [];
+let selectedPlayer = null; // { id, name }
 
 // =====================
 //  Helpers
@@ -40,14 +44,28 @@ function isSlotPast(slotStr) {
   if (currentKey > todayKey) return false;
 
   const startTime = slotStr.split(' - ')[0];
-  const [h, m] = startTime.split(':').map(Number);
+  const [h] = startTime.split(':').map(Number);
   const now = new Date();
-  const slotDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+  const slotDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, 0);
   return slotDate <= now;
 }
 
+function isSlotLocked(court, slot) {
+  const dateKey = formatDateKey(currentDate);
+  const dateLocks = lockedSlots[dateKey];
+  if (!dateLocks) return false;
+  if (dateLocks[court] === true) return true;
+  if (Array.isArray(dateLocks[court]) && dateLocks[court].includes(slot)) return true;
+  return false;
+}
+
 function getPlayerName() {
-  return document.getElementById('playerName').value.trim();
+  if (selectedPlayer) return selectedPlayer.name;
+  return document.getElementById('playerSearch').value.trim();
+}
+
+function getPlayerId() {
+  return selectedPlayer ? selectedPlayer.id : '';
 }
 
 function showToast(msg, type = '') {
@@ -71,8 +89,221 @@ function timeAgo(isoString) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function weatherIcon(code) {
+  const c = parseInt(code);
+  if (c === 113) return '☀️';
+  if (c === 116) return '⛅';
+  if (c === 119 || c === 122) return '☁️';
+  if ([176, 263, 266, 293, 296, 299, 302, 305, 308, 353, 356, 359].includes(c)) return '🌧️';
+  if ([200, 386, 389, 392, 395].includes(c)) return '⛈️';
+  if ([227, 230, 323, 326, 329, 332, 335, 338, 368, 371, 374, 377].includes(c)) return '🌨️';
+  if ([143, 248, 260].includes(c)) return '🌫️';
+  return '🌤️';
+}
+
 // =====================
-//  UI
+//  Clock & Weather
+// =====================
+function updateClock() {
+  const now = new Date();
+  document.getElementById('currentTime').textContent =
+    now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  document.getElementById('currentDateInfo').textContent =
+    now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+async function fetchWeather() {
+  try {
+    const res = await fetch('/api/weather');
+    if (!res.ok) return;
+    const data = await res.json();
+    document.getElementById('weatherTemp').textContent = `${data.temp_c}°C`;
+    document.getElementById('weatherCondition').textContent = data.condition;
+    document.getElementById('weatherIcon').textContent = weatherIcon(data.icon_code);
+  } catch { /* ignore */ }
+}
+
+// =====================
+//  Dashboard
+// =====================
+function renderDashboard(stats) {
+  const container = document.getElementById('dashCards');
+  if (!stats) { container.innerHTML = ''; return; }
+
+  let html = '';
+  const courtStats = stats.courts || {};
+  Object.keys(courtStats).forEach(court => {
+    const s = courtStats[court];
+    const pct = Math.round((s.booked / s.total) * 100);
+    html += `
+      <div class="dash-card">
+        <div class="dash-card-title">${court}</div>
+        <div class="dash-progress">
+          <div class="dash-progress-bar" style="width:${pct}%"></div>
+        </div>
+        <div class="dash-card-stats">
+          <span class="dash-stat booked">${s.booked} booked</span>
+          <span class="dash-stat available">${s.available} free</span>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `
+    <div class="dash-card dash-card-highlight">
+      <div class="dash-card-title">Today</div>
+      <div class="dash-big-num">${stats.uniquePlayers}</div>
+      <div class="dash-card-stats"><span class="dash-stat">unique players</span></div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+async function fetchStats() {
+  const dateKey = formatDateKey(currentDate);
+  try {
+    const res = await fetch(`/api/stats/${dateKey}`);
+    const stats = await res.json();
+    renderDashboard(stats);
+  } catch { /* ignore */ }
+}
+
+// =====================
+//  Player Selector
+// =====================
+async function fetchPlayers() {
+  try {
+    const res = await fetch('/api/players');
+    players = await res.json();
+  } catch {
+    players = [];
+  }
+}
+
+function setupPlayerSelector() {
+  const input = document.getElementById('playerSearch');
+  const dropdown = document.getElementById('playerDropdown');
+  const addBtn = document.getElementById('addPlayerBtn');
+  const clearBtn = document.getElementById('clearPlayerBtn');
+
+  // Restore from localStorage
+  const saved = localStorage.getItem('selectedPlayer');
+  if (saved) {
+    try {
+      selectedPlayer = JSON.parse(saved);
+      showSelectedPlayer();
+    } catch { selectedPlayer = null; }
+  }
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (q.length === 0) {
+      dropdown.style.display = 'none';
+      return;
+    }
+    const filtered = players.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
+    if (filtered.length === 0) {
+      dropdown.innerHTML = `<div class="dropdown-empty">No players found. Click + to register.</div>`;
+      dropdown.style.display = 'block';
+      return;
+    }
+    dropdown.innerHTML = filtered.map(p =>
+      `<div class="dropdown-item" data-id="${p.id}" data-name="${p.name}">${p.name}</div>`
+    ).join('');
+    dropdown.style.display = 'block';
+
+    dropdown.querySelectorAll('.dropdown-item').forEach(el => {
+      el.addEventListener('click', () => {
+        selectPlayer(el.dataset.id, el.dataset.name);
+        dropdown.style.display = 'none';
+        input.value = '';
+      });
+    });
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => { dropdown.style.display = 'none'; }, 200);
+  });
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim()) input.dispatchEvent(new Event('input'));
+  });
+
+  addBtn.addEventListener('click', openAddPlayerModal);
+  clearBtn.addEventListener('click', clearPlayer);
+}
+
+function selectPlayer(id, name) {
+  selectedPlayer = { id, name };
+  localStorage.setItem('selectedPlayer', JSON.stringify(selectedPlayer));
+  showSelectedPlayer();
+}
+
+function showSelectedPlayer() {
+  document.getElementById('selectedPlayerDisplay').style.display = 'flex';
+  document.getElementById('selectedPlayerName').textContent = selectedPlayer.name;
+  document.getElementById('playerSearch').style.display = 'none';
+}
+
+function clearPlayer() {
+  selectedPlayer = null;
+  localStorage.removeItem('selectedPlayer');
+  document.getElementById('selectedPlayerDisplay').style.display = 'none';
+  document.getElementById('playerSearch').style.display = 'block';
+  document.getElementById('playerSearch').value = '';
+}
+
+function openAddPlayerModal() {
+  const overlay = document.getElementById('modalOverlay');
+  const content = document.getElementById('modalContent');
+
+  content.innerHTML = `
+    <h3>Register New Player</h3>
+    <p class="modal-subtitle">Add yourself or someone else to the player list.</p>
+    <div class="modal-form">
+      <label>Name <span style="color:var(--red)">*</span></label>
+      <input type="text" id="newPlayerName" maxlength="40" placeholder="Full name" autofocus />
+      <label>Phone (optional)</label>
+      <input type="text" id="newPlayerPhone" maxlength="20" placeholder="Phone number" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="savePlayerBtn">Register Player</button>
+      <button class="btn btn-secondary" id="closeModalBtn">Cancel</button>
+    </div>
+  `;
+
+  document.getElementById('savePlayerBtn').addEventListener('click', async () => {
+    const name = document.getElementById('newPlayerName').value.trim();
+    const phone = document.getElementById('newPlayerPhone').value.trim();
+    if (!name) { showToast('Name is required', 'error'); return; }
+
+    try {
+      const res = await fetch('/api/players', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        players.push(data);
+        selectPlayer(data.id, data.name);
+        closeModal();
+        showToast(`${name} registered!`, 'success');
+      } else {
+        showToast(data.error || 'Could not register', 'error');
+      }
+    } catch {
+      showToast('Network error', 'error');
+    }
+  });
+
+  document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+  overlay.classList.add('active');
+}
+
+// =====================
+//  UI - Date
 // =====================
 function updateDateDisplay() {
   const label = formatDateLabel(currentDate);
@@ -82,12 +313,18 @@ function updateDateDisplay() {
     label === 'Today' || label === 'Tomorrow' || label === 'Yesterday' ? sublabel : '';
 }
 
+// =====================
+//  UI - Courts
+// =====================
 function renderCourts() {
   const grid = document.getElementById('courtsGrid');
   const spinner = document.getElementById('loadingSpinner');
   spinner.style.display = 'none';
   grid.style.display = 'grid';
   grid.innerHTML = '';
+
+  const dateKey = formatDateKey(currentDate);
+  const dateMatches = matches || {};
 
   courts.forEach(court => {
     const courtBookings = bookings[court] || {};
@@ -110,6 +347,9 @@ function renderCourts() {
     timeSlots.forEach(slot => {
       const booking = courtBookings[slot];
       const past = isSlotPast(slot);
+      const locked = isSlotLocked(court, slot);
+      const matchKey = `${court}|${slot}`;
+      const match = dateMatches[matchKey];
 
       const el = document.createElement('div');
 
@@ -117,16 +357,26 @@ function renderCourts() {
       let badge = 'Free';
       let nameText = 'Tap to book';
       let whenText = '';
+      let scoreText = '';
 
-      if (past && !booking) {
+      if (locked && !booking) {
+        statusClass = 'locked';
+        badge = 'Locked';
+        nameText = 'Court locked';
+      } else if (past && !booking) {
         statusClass = 'past';
         badge = 'Past';
         nameText = '';
       } else if (booking) {
         statusClass = 'booked';
         badge = 'Booked';
-        nameText = booking.name;
+        const playersList = booking.players || [booking.name];
+        nameText = playersList.join(', ');
         whenText = timeAgo(booking.bookedAt);
+
+        if (match && match.scores) {
+          scoreText = match.scores.map(s => `${s[0]}-${s[1]}`).join(' ');
+        }
       }
 
       el.className = `slot ${statusClass}`;
@@ -134,13 +384,16 @@ function renderCourts() {
         <span class="slot-time">${slot}</span>
         <div class="slot-info">
           <div class="slot-name">${nameText}</div>
+          ${scoreText ? `<div class="slot-score">${scoreText}</div>` : ''}
           ${whenText ? `<div class="slot-when">${whenText}</div>` : ''}
         </div>
         <span class="slot-badge">${badge}</span>
       `;
 
-      if (!past) {
-        el.addEventListener('click', () => openModal(court, slot, booking));
+      if (!past && !locked) {
+        el.addEventListener('click', () => openModal(court, slot, booking, match));
+      } else if (booking) {
+        el.addEventListener('click', () => openModal(court, slot, booking, match));
       }
 
       slotsContainer.appendChild(el);
@@ -151,42 +404,60 @@ function renderCourts() {
 // =====================
 //  Modal
 // =====================
-function openModal(court, slot, booking) {
+function openModal(court, slot, booking, match) {
   const overlay = document.getElementById('modalOverlay');
   const content = document.getElementById('modalContent');
 
   if (booking) {
-    // Show booking details & cancel option
+    const playersList = booking.players || [booking.name];
+    const hasMatch = match && match.scores;
+
     content.innerHTML = `
       <h3>Slot Booked</h3>
-      <p class="modal-subtitle">This slot is currently reserved. You can cancel it if it's yours.</p>
+      <p class="modal-subtitle">This slot is currently reserved.</p>
       <div class="modal-info">
         <strong>${court}</strong><br>
         ${slot}<br>
-        Booked by: <strong>${booking.name}</strong><br>
+        Players: <strong>${playersList.join(', ')}</strong><br>
         ${booking.bookedAt ? `Reserved ${timeAgo(booking.bookedAt)}` : ''}
       </div>
+      ${hasMatch ? `
+        <div class="match-result">
+          <div class="match-teams">
+            <span class="${match.winner === 'team1' ? 'winner' : ''}">${(match.team1 || []).join(' & ')}</span>
+            <span class="vs">vs</span>
+            <span class="${match.winner === 'team2' ? 'winner' : ''}">${(match.team2 || []).join(' & ')}</span>
+          </div>
+          <div class="match-scores">${match.scores.map(s => `<span>${s[0]}-${s[1]}</span>`).join(' ')}</div>
+        </div>
+      ` : ''}
       <div class="modal-actions">
-        <button class="btn btn-danger" id="cancelBtn">Cancel This Booking</button>
+        ${!isSlotPast(slot) ? `<button class="btn btn-danger" id="cancelBtn">Cancel This Booking</button>` : ''}
+        <button class="btn btn-primary" id="scoreBtn">Log Match Score</button>
         <button class="btn btn-secondary" id="closeModalBtn">Close</button>
       </div>
     `;
 
-    document.getElementById('cancelBtn').addEventListener('click', () => {
-      const name = getPlayerName();
-      if (!name) {
-        showToast('Enter your name first to cancel', 'error');
-        closeModal();
-        document.getElementById('playerName').focus();
-        return;
-      }
-      cancelBooking(court, slot, name);
+    if (!isSlotPast(slot) && document.getElementById('cancelBtn')) {
+      document.getElementById('cancelBtn').addEventListener('click', () => {
+        const name = getPlayerName();
+        const pid = getPlayerId();
+        if (!name && !pid) {
+          showToast('Select your player first to cancel', 'error');
+          closeModal();
+          return;
+        }
+        cancelBooking(court, slot, name, pid);
+      });
+    }
+
+    document.getElementById('scoreBtn').addEventListener('click', () => {
+      openScoreModal(court, slot, booking, match);
     });
 
     document.getElementById('closeModalBtn').addEventListener('click', closeModal);
 
   } else {
-    // Book the slot
     const name = getPlayerName();
     content.innerHTML = `
       <h3>Book This Slot</h3>
@@ -196,7 +467,7 @@ function openModal(court, slot, booking) {
         ${slot}<br>
         ${formatDateLabel(currentDate)}
       </div>
-      ${!name ? `<p style="color:#e74c3c;font-size:0.85rem;margin-bottom:12px;">Please enter your name above first.</p>` : ''}
+      ${!name ? `<p style="color:var(--red);font-size:0.85rem;margin-bottom:12px;">Please select a player above first.</p>` : ''}
       <div class="modal-actions">
         <button class="btn btn-primary" id="confirmBookBtn" ${!name ? 'disabled style="opacity:0.5"' : ''}>
           Book as "${name || '...'}"
@@ -207,7 +478,7 @@ function openModal(court, slot, booking) {
 
     if (name) {
       document.getElementById('confirmBookBtn').addEventListener('click', () => {
-        makeBooking(court, slot, name);
+        makeBooking(court, slot, name, getPlayerId());
       });
     }
 
@@ -217,6 +488,94 @@ function openModal(court, slot, booking) {
   overlay.classList.add('active');
 }
 
+function openScoreModal(court, slot, booking, existingMatch) {
+  const content = document.getElementById('modalContent');
+  const playersList = booking.players || [booking.name];
+
+  const t1p1 = existingMatch?.team1?.[0] || playersList[0] || '';
+  const t1p2 = existingMatch?.team1?.[1] || playersList[1] || '';
+  const t2p1 = existingMatch?.team2?.[0] || playersList[2] || '';
+  const t2p2 = existingMatch?.team2?.[1] || playersList[3] || '';
+  const s = existingMatch?.scores || [[0,0],[0,0],[0,0]];
+
+  const playerOpts = playersList.map(p => `<option value="${p}">${p}</option>`).join('');
+  const allOpts = `<option value="">--</option>` + players.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+
+  content.innerHTML = `
+    <h3>Log Match Score</h3>
+    <p class="modal-subtitle">${court} - ${slot}</p>
+    <div class="score-form">
+      <div class="team-section">
+        <label>Team 1</label>
+        <select id="t1p1" class="score-select">${allOpts}</select>
+        <select id="t1p2" class="score-select">${allOpts}</select>
+      </div>
+      <div class="team-section">
+        <label>Team 2</label>
+        <select id="t2p1" class="score-select">${allOpts}</select>
+        <select id="t2p2" class="score-select">${allOpts}</select>
+      </div>
+      <div class="sets-section">
+        <label>Sets (best of 3)</label>
+        <div class="set-row"><span>Set 1:</span><input type="number" id="s1a" min="0" max="7" value="${s[0][0]}"> - <input type="number" id="s1b" min="0" max="7" value="${s[0][1]}"></div>
+        <div class="set-row"><span>Set 2:</span><input type="number" id="s2a" min="0" max="7" value="${s[1][0]}"> - <input type="number" id="s2b" min="0" max="7" value="${s[1][1]}"></div>
+        <div class="set-row"><span>Set 3:</span><input type="number" id="s3a" min="0" max="7" value="${s[2]?.[0] || 0}"> - <input type="number" id="s3b" min="0" max="7" value="${s[2]?.[1] || 0}"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="saveScoreBtn">Save Score</button>
+      <button class="btn btn-secondary" id="closeModalBtn">Cancel</button>
+    </div>
+  `;
+
+  // Pre-select values
+  if (t1p1) document.getElementById('t1p1').value = t1p1;
+  if (t1p2) document.getElementById('t1p2').value = t1p2;
+  if (t2p1) document.getElementById('t2p1').value = t2p1;
+  if (t2p2) document.getElementById('t2p2').value = t2p2;
+
+  document.getElementById('saveScoreBtn').addEventListener('click', async () => {
+    const team1 = [document.getElementById('t1p1').value, document.getElementById('t1p2').value].filter(Boolean);
+    const team2 = [document.getElementById('t2p1').value, document.getElementById('t2p2').value].filter(Boolean);
+    const scores = [
+      [parseInt(document.getElementById('s1a').value) || 0, parseInt(document.getElementById('s1b').value) || 0],
+      [parseInt(document.getElementById('s2a').value) || 0, parseInt(document.getElementById('s2b').value) || 0],
+      [parseInt(document.getElementById('s3a').value) || 0, parseInt(document.getElementById('s3b').value) || 0]
+    ];
+
+    // Auto-detect winner
+    let t1wins = 0, t2wins = 0;
+    scores.forEach(([a, b]) => {
+      if (a > b) t1wins++;
+      else if (b > a) t2wins++;
+    });
+    const winner = t1wins >= 2 ? 'team1' : t2wins >= 2 ? 'team2' : null;
+
+    try {
+      const res = await fetch('/api/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: formatDateKey(currentDate),
+          court, slot, team1, team2, scores, winner
+        })
+      });
+      if (res.ok) {
+        showToast('Score saved!', 'success');
+        closeModal();
+        fetchMatches();
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Failed to save score', 'error');
+      }
+    } catch {
+      showToast('Network error', 'error');
+    }
+  });
+
+  document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+}
+
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('active');
 }
@@ -224,6 +583,61 @@ function closeModal() {
 document.getElementById('modalClose').addEventListener('click', closeModal);
 document.getElementById('modalOverlay').addEventListener('click', (e) => {
   if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+
+// =====================
+//  Leaderboard
+// =====================
+async function openLeaderboard() {
+  const overlay = document.getElementById('leaderboardOverlay');
+  const table = document.getElementById('leaderboardTable');
+  table.innerHTML = '<p style="text-align:center;color:var(--text-light)">Loading...</p>';
+  overlay.classList.add('active');
+
+  try {
+    const res = await fetch('/api/leaderboard');
+    const data = await res.json();
+
+    if (data.length === 0) {
+      table.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:20px;">No matches recorded yet. Play some games and log scores!</p>';
+      return;
+    }
+
+    let html = `
+      <div class="lb-header">
+        <span class="lb-rank">#</span>
+        <span class="lb-name">Player</span>
+        <span class="lb-w">W</span>
+        <span class="lb-l">L</span>
+        <span class="lb-pct">Win%</span>
+      </div>
+    `;
+    data.forEach((p, i) => {
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
+      html += `
+        <div class="lb-row ${i < 3 ? 'lb-top' : ''}">
+          <span class="lb-rank">${medal}</span>
+          <span class="lb-name">${p.name}</span>
+          <span class="lb-w">${p.wins}</span>
+          <span class="lb-l">${p.losses}</span>
+          <span class="lb-pct">${p.winRate}%</span>
+        </div>
+      `;
+    });
+    table.innerHTML = html;
+  } catch {
+    table.innerHTML = '<p style="color:var(--red)">Failed to load leaderboard</p>';
+  }
+}
+
+document.getElementById('leaderboardBtn').addEventListener('click', openLeaderboard);
+document.getElementById('leaderboardClose').addEventListener('click', () => {
+  document.getElementById('leaderboardOverlay').classList.remove('active');
+});
+document.getElementById('leaderboardOverlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('leaderboardOverlay')) {
+    document.getElementById('leaderboardOverlay').classList.remove('active');
+  }
 });
 
 // =====================
@@ -240,14 +654,23 @@ async function fetchBookings() {
   }
 }
 
-async function makeBooking(court, slot, name) {
+async function fetchMatches() {
+  const dateKey = formatDateKey(currentDate);
+  try {
+    const res = await fetch(`/api/matches/${dateKey}`);
+    matches = await res.json();
+    renderCourts();
+  } catch { /* ignore */ }
+}
+
+async function makeBooking(court, slot, name, playerId) {
   closeModal();
   const dateKey = formatDateKey(currentDate);
   try {
     const res = await fetch('/api/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: dateKey, court, slot, name })
+      body: JSON.stringify({ date: dateKey, court, slot, name, playerId })
     });
     const data = await res.json();
     if (res.ok) {
@@ -261,14 +684,14 @@ async function makeBooking(court, slot, name) {
   }
 }
 
-async function cancelBooking(court, slot, name) {
+async function cancelBooking(court, slot, name, playerId) {
   closeModal();
   const dateKey = formatDateKey(currentDate);
   try {
     const res = await fetch('/api/book', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: dateKey, court, slot, name })
+      body: JSON.stringify({ date: dateKey, court, slot, name, playerId })
     });
     const data = await res.json();
     if (res.ok) {
@@ -290,6 +713,8 @@ document.getElementById('prevDay').addEventListener('click', () => {
   updateDateDisplay();
   showSpinner();
   fetchBookings();
+  fetchStats();
+  fetchMatches();
 });
 
 document.getElementById('nextDay').addEventListener('click', () => {
@@ -297,6 +722,8 @@ document.getElementById('nextDay').addEventListener('click', () => {
   updateDateDisplay();
   showSpinner();
   fetchBookings();
+  fetchStats();
+  fetchMatches();
 });
 
 function showSpinner() {
@@ -315,8 +742,9 @@ function initSocket() {
     if (!bookings[court]) bookings[court] = {};
     bookings[court][slot] = booking;
     renderCourts();
-    if (booking.name !== getPlayerName()) {
-      showToast(`${booking.name} just booked ${court} at ${slot}`);
+    const bookerName = booking.bookedBy || booking.name;
+    if (bookerName !== getPlayerName()) {
+      showToast(`${bookerName} just booked ${court} at ${slot}`);
     }
   });
 
@@ -324,6 +752,30 @@ function initSocket() {
     if (date !== formatDateKey(currentDate)) return;
     if (bookings[court]) delete bookings[court][slot];
     renderCourts();
+  });
+
+  socket.on('statsUpdate', ({ date, stats }) => {
+    if (date === formatDateKey(currentDate)) {
+      renderDashboard(stats);
+    }
+  });
+
+  socket.on('matchUpdate', ({ date, court, slot, match }) => {
+    if (date !== formatDateKey(currentDate)) return;
+    const key = `${court}|${slot}`;
+    matches[key] = match;
+    renderCourts();
+  });
+
+  socket.on('locksUpdate', ({ date, lockedSlots: newLocks }) => {
+    lockedSlots = newLocks;
+    if (date === formatDateKey(currentDate)) renderCourts();
+  });
+
+  socket.on('playerAdded', (player) => {
+    if (!players.find(p => p.id === player.id)) {
+      players.push(player);
+    }
   });
 
   socket.on('connect', () => {
@@ -340,17 +792,27 @@ function initSocket() {
 // =====================
 async function init() {
   updateDateDisplay();
+  updateClock();
+  setInterval(updateClock, 1000);
+
   try {
     const res = await fetch('/api/meta');
     const meta = await res.json();
     courts = meta.courts;
     timeSlots = meta.timeSlots;
+    lockedSlots = meta.lockedSlots || {};
   } catch {
     showToast('Failed to load app data', 'error');
     return;
   }
 
-  await fetchBookings();
+  await fetchPlayers();
+  setupPlayerSelector();
+
+  await Promise.all([fetchBookings(), fetchStats(), fetchMatches()]);
+
+  fetchWeather();
+  setInterval(fetchWeather, 30 * 60 * 1000);
 
   // Refresh time-based "past" status every minute
   setInterval(() => {

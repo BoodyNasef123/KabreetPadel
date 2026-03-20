@@ -1,9 +1,7 @@
 const express = require('express');
 const http = require('http');
-const https = require('https');
 const { Server } = require('socket.io');
 const path = require('path');
-require('dotenv').config();
 const store = require('./dataStore');
 
 const app = express();
@@ -11,10 +9,6 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
-
-const GOOGLE_WEATHER_API_KEY = process.env.GOOGLE_WEATHER_API_KEY;
-const WEATHER_LAT = parseFloat(process.env.WEATHER_LAT || '30.5255');
-const WEATHER_LON = parseFloat(process.env.WEATHER_LON || '32.2670');
 
 // Time slots: 24 one-hour slots
 const TIME_SLOTS = [];
@@ -32,43 +26,6 @@ function getCourts() {
 function getSettings() {
   const admin = store.loadAdmin();
   return admin.settings || {};
-}
-
-// =====================
-//  Weather cache
-// =====================
-let weatherCache = { data: null, fetchedAt: 0 };
-const WEATHER_CACHE_MS = 30 * 60 * 1000; // 30 min
-
-function fetchWeatherFromAPI() {
-  return new Promise((resolve, reject) => {
-    const url = `https://weather.googleapis.com/v1/currentConditions:lookup?key=${GOOGLE_WEATHER_API_KEY}&location.latitude=${WEATHER_LAT}&location.longitude=${WEATHER_LON}&languageCode=en&unitsSystem=METRIC`;
-
-    https.get(url, { timeout: 5000 }, (res) => {
-      let body = '';
-      res.on('data', chunk => body += chunk);
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(body);
-          if (json.error) {
-            return reject(new Error(json.error.message || 'Google Weather API error'));
-          }
-          const c = json.currentConditions || {};
-          resolve({
-            temp_c: Math.round(c.temperature?.degrees ?? '--'),
-            feels_like_c: Math.round(c.feelsLikeTemperature?.degrees ?? '--'),
-            condition: c.weatherCondition?.description?.text || 'Unknown',
-            humidity: Math.round(c.relativeHumidity ?? '--'),
-            wind_kph: Math.round(c.wind?.speed?.value ?? '--'),
-            icon_code: c.weatherCondition?.type || 'CLEAR'
-          });
-        } catch {
-          reject(new Error('Failed to parse Google weather response'));
-        }
-      });
-      res.on('error', reject);
-    }).on('error', reject);
-  });
 }
 
 // =====================
@@ -162,20 +119,6 @@ app.get('/api/stats/:date', (req, res) => {
 });
 
 // Weather
-app.get('/api/weather', async (req, res) => {
-  const now = Date.now();
-  if (weatherCache.data && (now - weatherCache.fetchedAt) < WEATHER_CACHE_MS) {
-    return res.json(weatherCache.data);
-  }
-  try {
-    const data = await fetchWeatherFromAPI();
-    weatherCache = { data, fetchedAt: now };
-    res.json(data);
-  } catch {
-    if (weatherCache.data) return res.json(weatherCache.data);
-    res.status(503).json({ error: 'Weather unavailable' });
-  }
-});
 
 // Book a slot
 app.post('/api/book', (req, res) => {

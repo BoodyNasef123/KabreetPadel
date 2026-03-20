@@ -108,6 +108,7 @@ async function initAdmin() {
   loadBookings();
   loadCourtsLock();
   loadScores();
+  loadLogs();
   loadSettings();
   initSocket();
 }
@@ -442,6 +443,62 @@ document.getElementById('scoreNextDay').addEventListener('click', () => {
   scoreDate.setDate(scoreDate.getDate() + 1);
   loadScores();
 });
+
+// =====================
+//  Logs Tab
+// =====================
+async function loadLogs() {
+  try {
+    const res = await fetch('/api/admin/logs', { headers: adminHeaders() });
+    const logs = await res.json();
+    renderLogs(logs);
+  } catch { /* ignore */ }
+}
+
+function renderLogs(logs) {
+  const table = document.getElementById('logsTable');
+
+  if (logs.length === 0) {
+    table.innerHTML = '<p class="empty-state">No booking activity yet.</p>';
+    return;
+  }
+
+  let html = `
+    <div class="table-row table-header">
+      <span class="col-log-time">Timestamp</span>
+      <span class="col-log-event">Event</span>
+      <span class="col-name">Player</span>
+      <span class="col-court">Court</span>
+      <span class="col-log-slot">Slot · Date</span>
+    </div>
+  `;
+
+  logs.forEach(log => {
+    const ts = new Date(log.timestamp);
+    const tsStr = ts.toLocaleString('en-US', {
+      month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+    const eventLabel = log.event === 'booking_made'
+      ? '<span class="badge-active">Booked</span>'
+      : '<span class="badge-inactive">Cancelled</span>';
+    const slotDate = log.date
+      ? new Date(log.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : '';
+
+    html += `
+      <div class="table-row">
+        <span class="col-log-time">${tsStr}</span>
+        <span class="col-log-event">${eventLabel}</span>
+        <span class="col-name">${log.playerName || '--'}</span>
+        <span class="col-court">${log.court || '--'}</span>
+        <span class="col-log-slot">${log.slot || '--'}${slotDate ? ' · ' + slotDate : ''}</span>
+      </div>
+    `;
+  });
+
+  table.innerHTML = html;
+}
 
 // =====================
 //  Settings Tab

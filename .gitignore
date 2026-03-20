@@ -2,5 +2,6 @@ node_modules/
 bookings.json
 data/bookings.json
 data/matches.json
+data/logs.json
 .env
 *.log

@@ -309,6 +309,13 @@
 }
 
 /* =====================
+   Logs columns
+   ===================== */
+.col-log-time { flex: 1.6; font-size: 0.82rem; color: var(--text-light); }
+.col-log-event { flex: 1; }
+.col-log-slot { flex: 2; font-size: 0.85rem; }
+
+/* =====================
    Responsive
    ===================== */
 @media (max-width: 600px) {

@@ -6,6 +6,7 @@ const PLAYERS_FILE = path.join(DATA_DIR, 'players.json');
 const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
 const ADMIN_FILE = path.join(DATA_DIR, 'admin.json');
 const MATCHES_FILE = path.join(DATA_DIR, 'matches.json');
+const LOGS_FILE = path.join(DATA_DIR, 'logs.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -148,11 +149,25 @@ function saveMatches(data) {
 }
 
 // =====================
+//  Logs
+// =====================
+function loadLogs() {
+  return loadJSON(LOGS_FILE, []);
+}
+
+function addLog(entry) {
+  const logs = loadLogs();
+  logs.unshift({ ...entry, timestamp: new Date().toISOString() });
+  queueWrite(LOGS_FILE, logs);
+}
+
+// =====================
 //  Init default files if they don't exist
 // =====================
 if (!fs.existsSync(PLAYERS_FILE)) savePlayers(DEFAULT_PLAYERS);
 if (!fs.existsSync(ADMIN_FILE)) saveAdmin(DEFAULT_ADMIN);
 if (!fs.existsSync(MATCHES_FILE)) saveMatches({});
+if (!fs.existsSync(LOGS_FILE)) queueWrite(LOGS_FILE, []);
 
 module.exports = {
   loadPlayers,
@@ -166,5 +181,7 @@ module.exports = {
   saveAdmin,
   isSlotLocked,
   loadMatches,
-  saveMatches
+  saveMatches,
+  loadLogs,
+  addLog
 };

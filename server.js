@@ -207,6 +207,7 @@ app.post('/api/book', (req, res) => {
 
   bookings[date][court][slot] = booking;
   store.saveBookings(bookings);
+  store.addLog({ event: 'booking_made', playerName: bookerName, court, slot, date });
 
   io.emit('bookingUpdate', { date, court, slot, booking });
   io.emit('statsUpdate', { date, stats: computeStats(date) });
@@ -243,6 +244,7 @@ app.delete('/api/book', (req, res) => {
     return res.status(403).json({ error: 'Name does not match the booking' });
   }
 
+  store.addLog({ event: 'booking_cancelled', playerName: existing.bookedBy || existing.name, court, slot, date });
   delete bookings[date][court][slot];
   store.saveBookings(bookings);
 
@@ -321,6 +323,11 @@ app.get('/api/leaderboard', (req, res) => {
 // =====================
 //  Admin API routes
 // =====================
+
+// Admin: booking logs
+app.get('/api/admin/logs', requireAdmin, (req, res) => {
+  res.json(store.loadLogs());
+});
 
 // Verify admin PIN
 app.post('/api/admin/auth', (req, res) => {
@@ -415,10 +422,12 @@ app.delete('/api/admin/book', requireAdmin, (req, res) => {
   if (!date || !court || !slot) return res.status(400).json({ error: 'Missing fields' });
 
   const bookings = store.loadBookings();
-  if (!bookings[date]?.[court]?.[slot]) {
+  const existing = bookings[date]?.[court]?.[slot];
+  if (!existing) {
     return res.status(404).json({ error: 'Booking not found' });
   }
 
+  store.addLog({ event: 'booking_cancelled', playerName: existing.bookedBy || existing.name, court, slot, date, byAdmin: true });
   delete bookings[date][court][slot];
   store.saveBookings(bookings);
 

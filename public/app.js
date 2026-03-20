@@ -89,37 +89,8 @@ function timeAgo(isoString) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-function weatherIcon(type) {
-  if (!type) return '🌤️';
-  const t = String(type).toUpperCase();
-  // wttr.in numeric codes
-  const n = parseInt(t);
-  if (!isNaN(n)) {
-    if (n === 113) return '☀️';
-    if (n === 116) return '⛅';
-    if (n === 119 || n === 122) return '☁️';
-    if ([176,263,266,293,296,299,302,305,308,353,356,359].includes(n)) return '🌧️';
-    if ([200,386,389,392,395].includes(n)) return '⛈️';
-    if ([227,230,323,326,329,332,335,338,368,371,374,377].includes(n)) return '🌨️';
-    if ([143,248,260].includes(n)) return '🌫️';
-    return '🌤️';
-  }
-  // Google Weather API condition types
-  if (t === 'CLEAR') return '☀️';
-  if (t === 'MOSTLY_CLEAR') return '🌤️';
-  if (t === 'PARTLY_CLOUDY') return '⛅';
-  if (t === 'MOSTLY_CLOUDY') return '🌥️';
-  if (t === 'CLOUDY') return '☁️';
-  if (t === 'WINDY' || t === 'BREEZY') return '💨';
-  if (t.includes('FOG') || t.includes('HAZE') || t.includes('SMOKE') || t.includes('DUST')) return '🌫️';
-  if (t === 'THUNDERSTORM' || t.includes('THUNDER')) return '⛈️';
-  if (t.includes('SNOW') || t.includes('ICY') || t.includes('HAIL') || t.includes('FREEZING')) return '🌨️';
-  if (t.includes('RAIN') || t.includes('DRIZZLE') || t.includes('SHOWER')) return '🌧️';
-  return '🌤️';
-}
-
 // =====================
-//  Clock & Weather
+//  Clock
 // =====================
 function updateClock() {
   const now = new Date();
@@ -127,17 +98,6 @@ function updateClock() {
     now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   document.getElementById('currentDateInfo').textContent =
     now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-}
-
-async function fetchWeather() {
-  try {
-    const res = await fetch('/api/weather');
-    if (!res.ok) return;
-    const data = await res.json();
-    document.getElementById('weatherTemp').textContent = `${data.temp_c}°C`;
-    document.getElementById('weatherCondition').textContent = data.condition;
-    document.getElementById('weatherIcon').textContent = weatherIcon(data.icon_code);
-  } catch { /* ignore */ }
 }
 
 // =====================
@@ -193,7 +153,7 @@ function setupPlayerSelector() {
   });
 
   input.addEventListener('blur', () => {
-    setTimeout(() => { dropdown.style.display = 'none'; }, 200);
+    setTimeout(() => { dropdown.style.display = 'none'; }, 300);
   });
 
   input.addEventListener('focus', () => {
@@ -723,9 +683,6 @@ async function init() {
   setupPlayerSelector();
 
   await Promise.all([fetchBookings(), fetchMatches()]);
-
-  fetchWeather();
-  setInterval(fetchWeather, 30 * 60 * 1000);
 
   // Refresh time-based "past" status every minute
   setInterval(() => {

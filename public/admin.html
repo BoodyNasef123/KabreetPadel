@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kabreet Padel - Admin</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🎾</span>
+        <div>
+          <h1>Kabreet Padel</h1>
+          <p class="subtitle">Admin Panel</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="/" class="header-btn" title="Back to App">🏠</a>
+        <button class="header-btn" id="logoutBtn" title="Logout">🚪</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Login Screen -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <h2>Admin Login</h2>
+      <p>Enter the admin PIN to continue.</p>
+      <input type="password" id="adminPin" placeholder="Enter PIN" maxlength="20" />
+      <button class="btn btn-primary" id="loginBtn">Login</button>
+      <p id="loginError" class="login-error" style="display:none;">Invalid PIN</p>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div id="adminDashboard" style="display:none;">
+    <nav class="admin-tabs">
+      <button class="tab active" data-tab="players">Players</button>
+      <button class="tab" data-tab="bookings">Bookings</button>
+      <button class="tab" data-tab="courts">Courts</button>
+      <button class="tab" data-tab="scores">Scores</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </nav>
+
+    <main>
+      <!-- Players Tab -->
+      <section class="tab-content active" id="tab-players">
+        <div class="admin-section-header">
+          <h2>Player Management</h2>
+          <button class="btn btn-primary btn-sm" id="addPlayerAdminBtn">+ Add Player</button>
+        </div>
+        <div class="admin-search">
+          <input type="text" id="playerSearchAdmin" placeholder="Search players..." />
+        </div>
+        <div id="playersTable" class="admin-table"></div>
+      </section>
+
+      <!-- Bookings Tab -->
+      <section class="tab-content" id="tab-bookings">
+        <div class="admin-section-header">
+          <h2>Booking Management</h2>
+          <div class="date-nav-mini">
+            <button class="btn-nav btn-sm" id="adminPrevDay">&#8592;</button>
+            <span id="adminDateLabel">Today</span>
+            <button class="btn-nav btn-sm" id="adminNextDay">&#8594;</button>
+          </div>
+        </div>
+        <div id="bookingsTable" class="admin-table"></div>
+      </section>
+
+      <!-- Courts Tab -->
+      <section class="tab-content" id="tab-courts">
+        <div class="admin-section-header">
+          <h2>Court Locks</h2>
+          <div class="date-nav-mini">
+            <button class="btn-nav btn-sm" id="lockPrevDay">&#8592;</button>
+            <span id="lockDateLabel">Today</span>
+            <button class="btn-nav btn-sm" id="lockNextDay">&#8594;</button>
+          </div>
+        </div>
+        <div id="courtsLockPanel" class="admin-table"></div>
+      </section>
+
+      <!-- Scores Tab -->
+      <section class="tab-content" id="tab-scores">
+        <div class="admin-section-header">
+          <h2>Match Scores</h2>
+          <div class="date-nav-mini">
+            <button class="btn-nav btn-sm" id="scorePrevDay">&#8592;</button>
+            <span id="scoreDateLabel">Today</span>
+            <button class="btn-nav btn-sm" id="scoreNextDay">&#8594;</button>
+          </div>
+        </div>
+        <div id="scoresTable" class="admin-table"></div>
+      </section>
+
+      <!-- Settings Tab -->
+      <section class="tab-content" id="tab-settings">
+        <h2>App Settings</h2>
+        <div class="settings-form">
+          <label>Max Bookings Per Player Per Day</label>
+          <input type="number" id="settMaxBookings" min="1" max="24" />
+
+          <label>Booking Window (days ahead)</label>
+          <input type="number" id="settBookingWindow" min="1" max="30" />
+
+          <label>Change Admin PIN</label>
+          <input type="text" id="settPin" placeholder="New PIN" />
+
+          <button class="btn btn-primary" id="saveSettingsBtn" style="margin-top:16px;">Save Settings</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,325 @@
+/* =====================
+   Admin Login
+   ===================== */
+.login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 20px;
+}
+
+.login-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 40px 32px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+}
+
+.login-card h2 {
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+}
+
+.login-card p {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-bottom: 20px;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  font-size: 1.1rem;
+  text-align: center;
+  outline: none;
+  margin-bottom: 14px;
+  letter-spacing: 4px;
+}
+
+.login-card input:focus {
+  border-color: var(--blue);
+}
+
+.login-card .btn {
+  width: 100%;
+}
+
+.login-error {
+  color: var(--red);
+  font-size: 0.85rem;
+  margin-top: 10px;
+}
+
+/* =====================
+   Admin Tabs
+   ===================== */
+.admin-tabs {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 16px 0;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.tab {
+  background: var(--gray-light);
+  border: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  padding: 10px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-light);
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  background: #dfe6e9;
+}
+
+.tab.active {
+  background: var(--card-bg);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* =====================
+   Admin Section Header
+   ===================== */
+.admin-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-section-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+
+.admin-search {
+  margin-bottom: 12px;
+}
+
+.admin-search input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.admin-search input:focus {
+  border-color: var(--blue);
+}
+
+/* =====================
+   Date Nav Mini
+   ===================== */
+.date-nav-mini {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-nav-mini .btn-nav {
+  width: 32px;
+  height: 32px;
+  font-size: 0.9rem;
+}
+
+.date-nav-mini span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 90px;
+  text-align: center;
+}
+
+/* =====================
+   Admin Table
+   ===================== */
+.admin-table {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.table-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  gap: 10px;
+  border-bottom: 1px solid #f1f2f3;
+  font-size: 0.9rem;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-header {
+  background: var(--bg);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-light);
+}
+
+.row-inactive {
+  opacity: 0.5;
+}
+
+.col-name { flex: 2; }
+.col-phone { flex: 1; }
+.col-status { flex: 1; }
+.col-actions { flex: 1; text-align: right; }
+.col-court { flex: 1; font-weight: 600; }
+.col-time { flex: 1; }
+.col-score { flex: 2; font-size: 0.82rem; }
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px 6px;
+  transition: transform 0.1s;
+}
+
+.btn-icon:hover {
+  transform: scale(1.2);
+}
+
+.badge-active {
+  background: #eafaf1;
+  color: var(--green-dark);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-inactive {
+  background: #fdecea;
+  color: var(--red-dark);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.empty-state {
+  padding: 30px 20px;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+/* =====================
+   Court Lock Cards
+   ===================== */
+.lock-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+
+.lock-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.lock-card-header span {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.lock-status {
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+/* =====================
+   Settings Form
+   ===================== */
+.settings-form {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  max-width: 400px;
+}
+
+.settings-form label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  margin-top: 14px;
+}
+
+.settings-form label:first-child {
+  margin-top: 0;
+}
+
+.settings-form input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.settings-form input:focus {
+  border-color: var(--blue);
+}
+
+/* =====================
+   Responsive
+   ===================== */
+@media (max-width: 600px) {
+  .table-row {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .col-phone, .col-status {
+    font-size: 0.8rem;
+  }
+  .col-score {
+    flex-basis: 100%;
+  }
+}

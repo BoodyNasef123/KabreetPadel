@@ -8,6 +8,8 @@
   --red-dark: #c0392b;
   --blue: #3498db;
   --blue-dark: #2980b9;
+  --orange: #f39c12;
+  --orange-dark: #e67e22;
   --gray: #95a5a6;
   --gray-light: #ecf0f1;
   --gray-dark: #7f8c8d;
@@ -81,6 +83,30 @@ header {
   margin-top: 1px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.header-btn:hover {
+  background: rgba(255,255,255,0.35);
+}
+
 .live-badge {
   display: flex;
   align-items: center;
@@ -115,7 +141,145 @@ main {
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+}
+
+/* =====================
+   Info Bar (Clock + Weather)
+   ===================== */
+.info-bar {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.info-clock,
+.info-weather {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.info-icon {
+  font-size: 1.5rem;
+}
+
+.clock-time {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.clock-date {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-light);
+}
+
+.weather-temp {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.weather-cond {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-light);
+}
+
+@media (max-width: 480px) {
+  .info-bar { flex-direction: column; gap: 10px; }
+}
+
+/* =====================
+   Mini Dashboard
+   ===================== */
+.dashboard {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+}
+
+.dash-cards {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+}
+
+.dash-card {
+  flex: 1;
+  min-width: 120px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  text-align: center;
+}
+
+.dash-card-highlight {
+  background: linear-gradient(135deg, #1a5276, #2471a3);
+  color: white;
+}
+
+.dash-card-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+
+.dash-progress {
+  height: 6px;
+  background: #dfe6e9;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.dash-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--blue));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.dash-card-stats {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.dash-stat {
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.dash-stat.booked { color: var(--orange); }
+.dash-stat.available { color: var(--green-dark); }
+
+.dash-big-num {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.dash-card-highlight .dash-card-title { opacity: 0.9; }
+.dash-card-highlight .dash-stat { color: rgba(255,255,255,0.8); }
+
+@media (max-width: 480px) {
+  .dash-cards { flex-wrap: wrap; }
+  .dash-card { min-width: calc(50% - 6px); }
 }
 
 /* =====================
@@ -177,7 +341,7 @@ main {
 }
 
 /* =====================
-   Name Input
+   Player Selector
    ===================== */
 .name-section {
   background: var(--card-bg);
@@ -196,7 +360,18 @@ main {
   margin-bottom: 8px;
 }
 
-.name-box input {
+.player-select-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.player-input-wrap {
+  flex: 1;
+  position: relative;
+}
+
+.player-input-wrap input {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid var(--gray-light);
@@ -208,9 +383,92 @@ main {
   background: #fafbfc;
 }
 
-.name-box input:focus {
+.player-input-wrap input:focus {
   border-color: var(--blue);
   background: #fff;
+}
+
+.player-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid var(--gray-light);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 50;
+  box-shadow: var(--shadow);
+}
+
+.dropdown-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.1s;
+}
+
+.dropdown-item:hover {
+  background: var(--gray-light);
+}
+
+.dropdown-empty {
+  padding: 10px 16px;
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+.btn-add-player {
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  width: 46px;
+  height: 46px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.btn-add-player:hover {
+  background: var(--green-dark);
+  transform: scale(1.05);
+}
+
+.selected-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #eafaf1;
+  border: 2px solid #a9dfbf;
+  border-radius: var(--radius-sm);
+  margin-top: 8px;
+}
+
+.selected-player span {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--green-dark);
+}
+
+.btn-clear-player {
+  background: transparent;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: var(--gray);
+  padding: 0 4px;
+}
+
+.btn-clear-player:hover {
+  color: var(--red);
 }
 
 /* =====================
@@ -332,6 +590,17 @@ main {
   opacity: 0.7;
 }
 
+.slot-score {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--blue-dark);
+  background: rgba(52,152,219,0.1);
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
 /* Available slot */
 .slot.available {
   background: #eafaf1;
@@ -360,6 +629,20 @@ main {
 }
 
 .slot.booked .slot-time { color: #6c4f00; }
+
+/* Locked slot */
+.slot.locked {
+  background: #fdecea;
+  border-color: #f5b7b1;
+  color: var(--red-dark);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.slot.locked .slot-badge {
+  background: var(--red);
+  color: white;
+}
 
 /* Past slot */
 .slot.past {
@@ -420,6 +703,7 @@ main {
 
 .legend-dot.available { background: var(--green); }
 .legend-dot.booked { background: #f9ca24; }
+.legend-dot.locked { background: var(--red); }
 .legend-dot.past { background: var(--gray); }
 
 /* =====================
@@ -452,10 +736,16 @@ main {
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   padding: 28px 24px;
   position: relative;
   animation: slideUp 0.2s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.leaderboard-modal {
+  max-width: 500px;
 }
 
 @keyframes slideUp {
@@ -507,6 +797,37 @@ main {
 
 .modal-content .modal-info strong { font-weight: 700; }
 
+.modal-form {
+  margin-bottom: 20px;
+}
+
+.modal-form label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-bottom: 4px;
+  margin-top: 12px;
+}
+
+.modal-form label:first-child {
+  margin-top: 0;
+}
+
+.modal-form input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.modal-form input:focus {
+  border-color: var(--blue);
+}
+
 .modal-actions {
   display: flex;
   flex-direction: column;
@@ -552,6 +873,165 @@ main {
 }
 
 .btn-secondary:hover { background: #dfe6e9; }
+
+/* =====================
+   Match Result in Modal
+   ===================== */
+.match-result {
+  background: #eaf2f8;
+  border: 2px solid #aed6f1;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.match-teams {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.match-teams .vs {
+  color: var(--text-light);
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+.match-teams .winner {
+  color: var(--green-dark);
+}
+
+.match-scores {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.match-scores span {
+  background: white;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--blue-dark);
+}
+
+/* =====================
+   Score Form
+   ===================== */
+.score-form {
+  margin-bottom: 20px;
+}
+
+.team-section {
+  margin-bottom: 12px;
+}
+
+.team-section label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.score-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  outline: none;
+  background: white;
+}
+
+.score-select:focus {
+  border-color: var(--blue);
+}
+
+.sets-section {
+  margin-top: 14px;
+}
+
+.sets-section label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.set-row span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 42px;
+  color: var(--text);
+}
+
+.set-row input {
+  width: 54px;
+  padding: 6px 10px;
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  text-align: center;
+  outline: none;
+}
+
+.set-row input:focus {
+  border-color: var(--blue);
+}
+
+/* =====================
+   Leaderboard
+   ===================== */
+.lb-header, .lb-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  gap: 8px;
+}
+
+.lb-header {
+  border-bottom: 2px solid var(--gray-light);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-light);
+  letter-spacing: 0.5px;
+}
+
+.lb-row {
+  border-bottom: 1px solid #f1f2f3;
+  font-size: 0.9rem;
+}
+
+.lb-row:last-child { border-bottom: none; }
+
+.lb-top {
+  font-weight: 600;
+}
+
+.lb-rank { width: 32px; text-align: center; flex-shrink: 0; }
+.lb-name { flex: 1; }
+.lb-w { width: 36px; text-align: center; color: var(--green-dark); font-weight: 600; }
+.lb-l { width: 36px; text-align: center; color: var(--red); font-weight: 600; }
+.lb-pct { width: 48px; text-align: center; }
 
 /* =====================
    Toast

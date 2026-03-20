@@ -18,8 +18,12 @@
         </div>
       </div>
       <div class="header-actions">
-        <a href="/" class="header-btn" title="Back to App">🏠</a>
-        <button class="header-btn" id="logoutBtn" title="Logout">🚪</button>
+        <a href="/" class="header-btn" title="Back to App">
+          <i data-lucide="home" class="icon"></i>
+        </a>
+        <button class="header-btn" id="logoutBtn" title="Logout">
+          <i data-lucide="log-out" class="icon"></i>
+        </button>
       </div>
     </div>
   </header>
@@ -27,9 +31,9 @@
   <!-- Login Screen -->
   <div id="loginScreen" class="login-screen">
     <div class="login-card">
-      <h2>Admin Login</h2>
+      <h2><i data-lucide="shield" class="icon-lg" style="vertical-align:middle;margin-right:6px;"></i>Admin Login</h2>
       <p>Enter the admin PIN to continue.</p>
-      <input type="password" id="adminPin" placeholder="Enter PIN" maxlength="20" />
+      <input type="password" id="adminPin" placeholder="Enter PIN" maxlength="20" minlength="4" />
       <button class="btn btn-primary" id="loginBtn">Login</button>
       <p id="loginError" class="login-error" style="display:none;">Invalid PIN</p>
     </div>
@@ -51,7 +55,9 @@
       <section class="tab-content active" id="tab-players">
         <div class="admin-section-header">
           <h2>Player Management</h2>
-          <button class="btn btn-primary btn-sm" id="addPlayerAdminBtn">+ Add Player</button>
+          <button class="btn btn-primary btn-sm" id="addPlayerAdminBtn">
+            <i data-lucide="plus" class="icon"></i> Add Player
+          </button>
         </div>
         <div class="admin-search">
           <input type="text" id="playerSearchAdmin" placeholder="Search players..." />
@@ -64,9 +70,13 @@
         <div class="admin-section-header">
           <h2>Booking Management</h2>
           <div class="date-nav-mini">
-            <button class="btn-nav btn-sm" id="adminPrevDay">&#8592;</button>
+            <button class="btn-nav btn-sm" id="adminPrevDay">
+              <i data-lucide="chevron-left" class="icon"></i>
+            </button>
             <span id="adminDateLabel">Today</span>
-            <button class="btn-nav btn-sm" id="adminNextDay">&#8594;</button>
+            <button class="btn-nav btn-sm" id="adminNextDay">
+              <i data-lucide="chevron-right" class="icon"></i>
+            </button>
           </div>
         </div>
         <div id="bookingsTable" class="admin-table"></div>
@@ -77,9 +87,13 @@
         <div class="admin-section-header">
           <h2>Court Locks</h2>
           <div class="date-nav-mini">
-            <button class="btn-nav btn-sm" id="lockPrevDay">&#8592;</button>
+            <button class="btn-nav btn-sm" id="lockPrevDay">
+              <i data-lucide="chevron-left" class="icon"></i>
+            </button>
             <span id="lockDateLabel">Today</span>
-            <button class="btn-nav btn-sm" id="lockNextDay">&#8594;</button>
+            <button class="btn-nav btn-sm" id="lockNextDay">
+              <i data-lucide="chevron-right" class="icon"></i>
+            </button>
           </div>
         </div>
         <div id="courtsLockPanel" class="admin-table"></div>
@@ -90,9 +104,13 @@
         <div class="admin-section-header">
           <h2>Match Scores</h2>
           <div class="date-nav-mini">
-            <button class="btn-nav btn-sm" id="scorePrevDay">&#8592;</button>
+            <button class="btn-nav btn-sm" id="scorePrevDay">
+              <i data-lucide="chevron-left" class="icon"></i>
+            </button>
             <span id="scoreDateLabel">Today</span>
-            <button class="btn-nav btn-sm" id="scoreNextDay">&#8594;</button>
+            <button class="btn-nav btn-sm" id="scoreNextDay">
+              <i data-lucide="chevron-right" class="icon"></i>
+            </button>
           </div>
         </div>
         <div id="scoresTable" class="admin-table"></div>
@@ -103,6 +121,14 @@
         <div class="admin-section-header">
           <h2>Booking Logs</h2>
         </div>
+        <div class="logs-filter-bar">
+          <select id="logsEventFilter">
+            <option value="">All Events</option>
+            <option value="booking_made">Booked</option>
+            <option value="booking_cancelled">Cancelled</option>
+          </select>
+          <input type="text" id="logsPlayerFilter" placeholder="Filter by player..." />
+        </div>
         <div id="logsTable" class="admin-table"></div>
       </section>
 
@@ -111,13 +137,15 @@
         <h2>App Settings</h2>
         <div class="settings-form">
           <label>Max Bookings Per Player Per Day</label>
-          <input type="number" id="settMaxBookings" min="1" max="24" />
+          <input type="number" id="settMaxBookings" min="1" max="24"
+                 oninput="this.value = Math.min(Math.max(parseInt(this.value)||1, 1), 24)" />
 
           <label>Booking Window (days ahead)</label>
-          <input type="number" id="settBookingWindow" min="1" max="30" />
+          <input type="number" id="settBookingWindow" min="1" max="30"
+                 oninput="this.value = Math.min(Math.max(parseInt(this.value)||1, 1), 30)" />
 
           <label>Change Admin PIN</label>
-          <input type="text" id="settPin" placeholder="New PIN" />
+          <input type="text" id="settPin" placeholder="New PIN (min 4 chars)" minlength="4" maxlength="20" />
 
           <button class="btn btn-primary" id="saveSettingsBtn" style="margin-top:16px;">Save Settings</button>
         </div>
@@ -126,9 +154,10 @@
   </div>
 
   <!-- Toast -->
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

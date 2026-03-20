@@ -7,6 +7,7 @@ let courts = [];
 let timeSlots = [];
 let currentDate = new Date();
 let socket;
+let logsData = []; // raw unfiltered logs
 
 // =====================
 //  Helpers
@@ -37,6 +38,12 @@ function adminHeaders() {
   };
 }
 
+// Active tab helper
+function activeTab() {
+  const activeEl = document.querySelector('.admin-tabs .tab.active');
+  return activeEl ? activeEl.dataset.tab : '';
+}
+
 // =====================
 //  Auth
 // =====================
@@ -47,6 +54,10 @@ document.getElementById('adminPin').addEventListener('keydown', (e) => {
 
 async function login() {
   const pin = document.getElementById('adminPin').value;
+  if (!pin || pin.length < 4) {
+    document.getElementById('loginError').style.display = 'block';
+    return;
+  }
   try {
     const res = await fetch('/api/admin/auth', {
       method: 'POST',
@@ -90,6 +101,7 @@ document.querySelectorAll('.admin-tabs .tab').forEach(tab => {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+    lucide.createIcons();
   });
 });
 
@@ -111,6 +123,7 @@ async function initAdmin() {
   loadLogs();
   loadSettings();
   initSocket();
+  lucide.createIcons();
 }
 
 // =====================
@@ -131,7 +144,13 @@ function renderPlayers(filter = '') {
     : players;
 
   if (filtered.length === 0) {
-    table.innerHTML = '<p class="empty-state">No players found.</p>';
+    table.innerHTML = `
+      <div class="empty-state">
+        <i data-lucide="users" style="width:36px;height:36px;"></i>
+        <p>${filter ? 'No players match your search.' : 'No players registered. Click <strong>+ Add Player</strong> to get started.'}</p>
+      </div>
+    `;
+    lucide.createIcons();
     return;
   }
 
@@ -148,16 +167,23 @@ function renderPlayers(filter = '') {
         <span class="col-name">${p.name}</span>
         <span class="col-status">${p.active ? '<span class="badge-active">Active</span>' : '<span class="badge-inactive">Inactive</span>'}</span>
         <span class="col-actions">
-          <button class="btn-icon" onclick="editPlayer('${p.id}')" title="Edit">✏️</button>
+          <button class="btn-icon" onclick="editPlayer('${p.id}')" title="Edit">
+            <i data-lucide="pencil" class="icon"></i>
+          </button>
           ${p.active
-            ? `<button class="btn-icon" onclick="deactivatePlayer('${p.id}')" title="Deactivate">🚫</button>`
-            : `<button class="btn-icon" onclick="reactivatePlayer('${p.id}')" title="Reactivate">✅</button>`
+            ? `<button class="btn-icon" onclick="deactivatePlayer('${p.id}')" title="Deactivate">
+                 <i data-lucide="user-x" class="icon"></i>
+               </button>`
+            : `<button class="btn-icon" onclick="reactivatePlayer('${p.id}')" title="Reactivate">
+                 <i data-lucide="user-check" class="icon"></i>
+               </button>`
           }
         </span>
       </div>
     `;
   });
   table.innerHTML = html;
+  lucide.createIcons();
 }
 
 document.getElementById('playerSearchAdmin').addEventListener('input', (e) => {
@@ -274,7 +300,9 @@ function renderBookings(bookings) {
           <span class="col-time">${slot}</span>
           <span class="col-name">${names}</span>
           <span class="col-actions">
-            <button class="btn-icon" onclick="adminCancelBooking('${formatDateKey(currentDate)}','${court}','${slot}')" title="Cancel">❌</button>
+            <button class="btn-icon" onclick="adminCancelBooking('${formatDateKey(currentDate)}','${court}','${slot}')" title="Cancel booking">
+              <i data-lucide="x-circle" class="icon"></i>
+            </button>
           </span>
         </div>
       `;
@@ -282,10 +310,16 @@ function renderBookings(bookings) {
   });
 
   if (!hasBookings) {
-    html += '<p class="empty-state">No bookings for this date.</p>';
+    html += `
+      <div class="empty-state">
+        <i data-lucide="calendar-x" style="width:36px;height:36px;"></i>
+        <p>No bookings for this date.</p>
+      </div>
+    `;
   }
 
   table.innerHTML = html;
+  lucide.createIcons();
 }
 
 async function adminCancelBooking(date, court, slot) {
@@ -340,15 +374,20 @@ function renderCourtsLock(dateLocks) {
           <span>${court}</span>
           <button class="btn btn-sm ${isLocked ? 'btn-danger' : 'btn-primary'}"
                   onclick="toggleCourtLock('${court}', ${isLocked})">
-            ${isLocked ? 'Unlock' : 'Lock Entire Court'}
+            <i data-lucide="${isLocked ? 'lock-open' : 'lock'}" class="icon"></i>
+            ${isLocked ? 'Unlock' : 'Lock Court'}
           </button>
         </div>
-        <div class="lock-status">${isLocked ? '🔒 Locked' : '🔓 Open'}</div>
+        <div class="lock-status">
+          <i data-lucide="${isLocked ? 'lock' : 'lock-open'}" class="icon"></i>
+          ${isLocked ? ' Locked' : ' Open'}
+        </div>
       </div>
     `;
   });
 
   panel.innerHTML = html;
+  lucide.createIcons();
 }
 
 async function toggleCourtLock(court, isCurrentlyLocked) {
@@ -404,7 +443,13 @@ function renderScores(matches) {
   const entries = Object.values(matches);
 
   if (entries.length === 0) {
-    table.innerHTML = '<p class="empty-state">No matches recorded for this date.</p>';
+    table.innerHTML = `
+      <div class="empty-state">
+        <i data-lucide="chart-no-axes-column" style="width:36px;height:36px;"></i>
+        <p>No matches recorded for this date.</p>
+      </div>
+    `;
+    lucide.createIcons();
     return;
   }
 
@@ -419,15 +464,17 @@ function renderScores(matches) {
 
   entries.forEach(m => {
     const scoreStr = (m.team1Sets !== undefined || m.team2Sets !== undefined)
-      ? `${m.team1Sets ?? 0}-${m.team2Sets ?? 0} sets`
+      ? `${m.team1Sets ?? 0}–${m.team2Sets ?? 0} sets`
       : '--';
-    const winnerStr = m.winner ? (m.winner === 'team1' ? (m.team1 || []).join(' & ') : (m.team2 || []).join(' & ')) : '';
+    const winnerStr = m.winner
+      ? (m.winner === 'team1' ? (m.team1 || []).join(' & ') : (m.team2 || []).join(' & '))
+      : '';
     html += `
       <div class="table-row">
         <span class="col-court">${m.court}</span>
         <span class="col-time">${m.slot}</span>
         <span class="col-name">${(m.team1 || []).join(' & ')} vs ${(m.team2 || []).join(' & ')}</span>
-        <span class="col-score">${scoreStr} ${winnerStr ? `(Winner: ${winnerStr})` : ''}</span>
+        <span class="col-score">${scoreStr}${winnerStr ? ` · <strong>${winnerStr}</strong>` : ''}</span>
       </div>
     `;
   });
@@ -450,16 +497,36 @@ document.getElementById('scoreNextDay').addEventListener('click', () => {
 async function loadLogs() {
   try {
     const res = await fetch('/api/admin/logs', { headers: adminHeaders() });
-    const logs = await res.json();
-    renderLogs(logs);
+    logsData = await res.json();
+    filterLogs();
   } catch { /* ignore */ }
 }
+
+function filterLogs() {
+  const eventFilter = document.getElementById('logsEventFilter')?.value || '';
+  const playerFilter = (document.getElementById('logsPlayerFilter')?.value || '').toLowerCase().trim();
+
+  let filtered = logsData;
+  if (eventFilter) filtered = filtered.filter(l => l.event === eventFilter);
+  if (playerFilter) filtered = filtered.filter(l => (l.playerName || '').toLowerCase().includes(playerFilter));
+
+  renderLogs(filtered);
+}
+
+document.getElementById('logsEventFilter').addEventListener('change', filterLogs);
+document.getElementById('logsPlayerFilter').addEventListener('input', filterLogs);
 
 function renderLogs(logs) {
   const table = document.getElementById('logsTable');
 
   if (logs.length === 0) {
-    table.innerHTML = '<p class="empty-state">No booking activity yet.</p>';
+    table.innerHTML = `
+      <div class="empty-state">
+        <i data-lucide="activity" style="width:36px;height:36px;"></i>
+        <p>No activity yet. Bookings and cancellations will appear here.</p>
+      </div>
+    `;
+    lucide.createIcons();
     return;
   }
 
@@ -513,15 +580,22 @@ async function loadSettings() {
 }
 
 document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
-  const settings = {
-    maxBookingsPerPlayerPerDay: parseInt(document.getElementById('settMaxBookings').value) || 3,
-    bookingWindowDays: parseInt(document.getElementById('settBookingWindow').value) || 7
-  };
-  const body = { settings };
+  const maxVal = parseInt(document.getElementById('settMaxBookings').value) || 3;
+  const windowVal = parseInt(document.getElementById('settBookingWindow').value) || 7;
   const newPin = document.getElementById('settPin').value.trim();
-  if (newPin) {
-    body.adminPin = newPin;
+
+  if (newPin && newPin.length < 4) {
+    showToast('PIN must be at least 4 characters', 'error');
+    return;
   }
+
+  const settings = {
+    maxBookingsPerPlayerPerDay: Math.min(Math.max(maxVal, 1), 24),
+    bookingWindowDays: Math.min(Math.max(windowVal, 1), 30)
+  };
+
+  const body = { settings };
+  if (newPin) body.adminPin = newPin;
 
   try {
     const res = await fetch('/api/admin/settings', {
@@ -547,8 +621,14 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
 // =====================
 function initSocket() {
   socket = io();
-  socket.on('bookingUpdate', () => loadBookings());
-  socket.on('bookingCancel', () => loadBookings());
+  socket.on('bookingUpdate', () => {
+    loadBookings();
+    if (activeTab() === 'logs') loadLogs();
+  });
+  socket.on('bookingCancel', () => {
+    loadBookings();
+    if (activeTab() === 'logs') loadLogs();
+  });
   socket.on('playerAdded', () => loadPlayers());
   socket.on('matchUpdate', () => loadScores());
   socket.on('locksUpdate', () => loadCourtsLock());

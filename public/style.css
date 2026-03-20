@@ -38,6 +38,26 @@ body {
 }
 
 /* =====================
+   Lucide Icon Sizing
+   ===================== */
+.icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  display: inline-block;
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+.icon-lg {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  display: inline-block;
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
+/* =====================
    Header
    ===================== */
 header {
@@ -86,21 +106,25 @@ header {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .header-btn {
   background: rgba(255,255,255,0.2);
   border: 1px solid rgba(255,255,255,0.4);
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   font-size: 1.1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
+  color: white;
+  text-decoration: none;
 }
 
 .header-btn:hover {
@@ -303,8 +327,10 @@ main {
   background: var(--gray-light);
   border: none;
   border-radius: 50%;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   font-size: 1.2rem;
   cursor: pointer;
   display: flex;
@@ -312,6 +338,7 @@ main {
   justify-content: center;
   transition: background 0.15s, transform 0.1s;
   flex-shrink: 0;
+  color: var(--text);
 }
 
 .btn-nav:hover {
@@ -411,7 +438,8 @@ main {
   transition: background 0.1s;
 }
 
-.dropdown-item:hover {
+.dropdown-item:hover,
+.dropdown-item--focused {
   background: var(--gray-light);
 }
 
@@ -419,6 +447,16 @@ main {
   padding: 10px 16px;
   color: var(--text-light);
   font-size: 0.85rem;
+}
+
+.player-input-wrap input.input-error {
+  border-color: var(--red);
+}
+
+.player-error-msg {
+  font-size: 0.8rem;
+  color: var(--red);
+  margin-top: 4px;
 }
 
 .btn-add-player {
@@ -501,6 +539,47 @@ main {
   to { transform: rotate(360deg); }
 }
 
+/* =====================
+   Skeleton Loading
+   ===================== */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .skeleton-grid { grid-template-columns: 1fr; }
+}
+
+.skeleton-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.skeleton-header {
+  height: 56px;
+  background: linear-gradient(90deg, #dde1e7 25%, #eef1f4 50%, #dde1e7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton-slot {
+  height: 60px;
+  margin: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, #f0f2f5 25%, #f8f9fa 50%, #f0f2f5 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .courts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -561,15 +640,21 @@ main {
   transition: transform 0.1s, box-shadow 0.15s;
   border: 2px solid transparent;
   gap: 8px;
+  min-height: 60px;
 }
 
 .slot:active { transform: scale(0.98); }
 
+.slot:focus {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
 .slot-time {
-  font-size: 0.85rem;
+  font-size: clamp(0.7rem, 2.5vw, 0.85rem);
   font-weight: 600;
   white-space: nowrap;
-  min-width: 100px;
+  flex-shrink: 0;
 }
 
 .slot-info {
@@ -757,21 +842,20 @@ main {
   position: absolute;
   top: 12px;
   right: 14px;
-  background: var(--gray-light);
+  background: #2c3e50;
   border: none;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  font-size: 1.1rem;
+  width: 40px;
+  height: 40px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-light);
-  line-height: 1;
+  transition: background 0.15s;
 }
 
-.modal-close:hover { background: #dfe6e9; }
+.modal-close:hover { background: #1a252f; }
+.modal-close svg { stroke: white; }
 
 .modal-content h3 {
   font-size: 1.2rem;
@@ -935,11 +1019,14 @@ main {
 .team-section label {
   display: block;
   font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-light);
+  font-weight: 700;
   text-transform: uppercase;
   margin-bottom: 6px;
+  letter-spacing: 0.5px;
 }
+
+.team-section-label-1 { color: var(--green-dark); }
+.team-section-label-2 { color: var(--orange-dark); }
 
 .score-select {
   width: 100%;
@@ -1061,3 +1148,47 @@ main {
 
 .toast.success { background: var(--green-dark); }
 .toast.error { background: var(--red-dark); }
+
+/* =====================
+   Dark Mode
+   ===================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1f2e;
+    --card-bg: #252b3b;
+    --text: #e8edf5;
+    --text-light: #8892a4;
+    --gray-light: #2f3649;
+    --gray-dark: #5a6478;
+  }
+
+  header {
+    background: linear-gradient(135deg, #0e2d47, #1a8a50);
+  }
+
+  .modal { background: var(--card-bg); }
+
+  .player-input-wrap input,
+  .modal-form input,
+  .score-select,
+  .set-row input {
+    background: #1e2535;
+    color: var(--text);
+    border-color: #3a4155;
+  }
+
+  .player-dropdown {
+    background: #1e2535;
+    border-color: #3a4155;
+  }
+
+  .skeleton-header {
+    background: linear-gradient(90deg, #2f3649 25%, #3a4155 50%, #2f3649 75%);
+    background-size: 200% 100%;
+  }
+
+  .skeleton-slot {
+    background: linear-gradient(90deg, #252b3b 25%, #2f3649 50%, #252b3b 75%);
+    background-size: 200% 100%;
+  }
+}

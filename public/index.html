@@ -17,8 +17,12 @@
         </div>
       </div>
       <div class="header-actions">
-        <button class="header-btn" id="leaderboardBtn" title="Leaderboard">🏆</button>
-        <a href="/admin.html" class="header-btn" title="Admin Panel">⚙️</a>
+        <button class="header-btn" id="leaderboardBtn" title="Leaderboard">
+          <i data-lucide="trophy" class="icon"></i>
+        </button>
+        <a href="/admin.html" class="header-btn" title="Admin Panel">
+          <i data-lucide="settings" class="icon"></i>
+        </a>
         <div class="live-badge">
           <span class="live-dot"></span>
           Live
@@ -31,7 +35,7 @@
     <!-- Info bar: clock -->
     <section class="info-bar" id="infoBar">
       <div class="info-clock">
-        <span class="info-icon">🕐</span>
+        <span class="info-icon"><i data-lucide="clock" class="icon-lg"></i></span>
         <div>
           <span id="currentTime" class="clock-time">--:--</span>
           <span id="currentDateInfo" class="clock-date">---</span>
@@ -42,35 +46,41 @@
     <!-- Date selector -->
     <section class="date-section">
       <div class="date-nav">
-        <button class="btn-nav" id="prevDay" aria-label="Previous day">&#8592;</button>
+        <button class="btn-nav" id="prevDay" aria-label="Previous day">
+          <i data-lucide="chevron-left" class="icon"></i>
+        </button>
         <div class="date-display">
           <span id="dateLabel" class="date-label"></span>
           <span id="dateSubLabel" class="date-sublabel"></span>
         </div>
-        <button class="btn-nav" id="nextDay" aria-label="Next day">&#8594;</button>
+        <button class="btn-nav" id="nextDay" aria-label="Next day">
+          <i data-lucide="chevron-right" class="icon"></i>
+        </button>
       </div>
     </section>
 
     <!-- Player selector -->
     <section class="name-section">
       <div class="name-box">
-        <label for="playerSelect">Select Player</label>
+        <label for="playerSearch">
+          <i data-lucide="user" class="icon"></i> Select Player
+        </label>
         <div class="player-select-row">
           <div class="player-input-wrap">
             <input
               type="text"
               id="playerSearch"
-              placeholder="Search or type your name..."
+              placeholder="Search your name..."
               maxlength="40"
               autocomplete="off"
             />
-            <div class="player-dropdown" id="playerDropdown"></div>
+            <div class="player-dropdown" id="playerDropdown" role="listbox"></div>
           </div>
         </div>
         <input type="hidden" id="selectedPlayerId" />
         <div class="selected-player" id="selectedPlayerDisplay" style="display:none;">
           <span id="selectedPlayerName"></span>
-          <button class="btn-clear-player" id="clearPlayerBtn">&times;</button>
+          <button class="btn-clear-player" id="clearPlayerBtn" aria-label="Clear player">&times;</button>
         </div>
       </div>
     </section>
@@ -78,7 +88,7 @@
     <!-- Courts grid -->
     <section class="courts-section" id="courtsSection">
       <div class="loading-spinner" id="loadingSpinner">
-        <div class="spinner"></div>
+        <div class="spinner" aria-label="Loading" aria-busy="true"></div>
         <p>Loading schedule...</p>
       </div>
       <div class="courts-grid" id="courtsGrid" style="display:none;"></div>
@@ -105,20 +115,24 @@
     </section>
   </main>
 
-  <!-- Modal -->
-  <div class="modal-overlay" id="modalOverlay">
+  <!-- Booking Modal -->
+  <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Booking">
     <div class="modal" id="modal">
-      <button class="modal-close" id="modalClose">&times;</button>
+      <button class="modal-close" id="modalClose" aria-label="Close">
+        <i data-lucide="x" class="icon"></i>
+      </button>
       <div class="modal-content" id="modalContent"></div>
     </div>
   </div>
 
   <!-- Leaderboard overlay -->
-  <div class="modal-overlay" id="leaderboardOverlay">
+  <div class="modal-overlay" id="leaderboardOverlay" role="dialog" aria-modal="true" aria-label="Leaderboard">
     <div class="modal leaderboard-modal">
-      <button class="modal-close" id="leaderboardClose">&times;</button>
+      <button class="modal-close" id="leaderboardClose" aria-label="Close">
+        <i data-lucide="x" class="icon"></i>
+      </button>
       <div class="modal-content" id="leaderboardContent">
-        <h3>🏆 Leaderboard</h3>
+        <h3><i data-lucide="trophy" class="icon"></i> Leaderboard</h3>
         <p class="modal-subtitle">Player rankings by wins</p>
         <div id="leaderboardTable"></div>
       </div>
@@ -126,9 +140,10 @@
   </div>
 
   <!-- Toast -->
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

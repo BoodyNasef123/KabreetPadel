@@ -10,6 +10,8 @@ let currentDate = new Date();
 let socket;
 let players = [];
 let selectedPlayer = null; // { id, name }
+let dropdownFocusIndex = -1;
+let navLocked = false;
 
 // =====================
 //  Helpers
@@ -60,8 +62,7 @@ function isSlotLocked(court, slot) {
 }
 
 function getPlayerName() {
-  if (selectedPlayer) return selectedPlayer.name;
-  return document.getElementById('playerSearch').value.trim();
+  return selectedPlayer ? selectedPlayer.name : null;
 }
 
 function getPlayerId() {
@@ -127,9 +128,11 @@ function setupPlayerSelector() {
   }
 
   input.addEventListener('input', () => {
+    dropdownFocusIndex = -1;
     const q = input.value.trim().toLowerCase();
     if (q.length === 0) {
       dropdown.style.display = 'none';
+      clearInputError();
       return;
     }
     const filtered = players.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
@@ -138,8 +141,8 @@ function setupPlayerSelector() {
       dropdown.style.display = 'block';
       return;
     }
-    dropdown.innerHTML = filtered.map(p =>
-      `<div class="dropdown-item" data-id="${p.id}" data-name="${p.name}">${p.name}</div>`
+    dropdown.innerHTML = filtered.map((p, i) =>
+      `<div class="dropdown-item" role="option" data-id="${p.id}" data-name="${p.name}" data-index="${i}">${p.name}</div>`
     ).join('');
     dropdown.style.display = 'block';
 
@@ -148,25 +151,88 @@ function setupPlayerSelector() {
         selectPlayer(el.dataset.id, el.dataset.name);
         dropdown.style.display = 'none';
         input.value = '';
+        dropdownFocusIndex = -1;
+      });
+      el.addEventListener('mouseenter', () => {
+        dropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('dropdown-item--focused'));
+        el.classList.add('dropdown-item--focused');
       });
     });
   });
 
+  input.addEventListener('keydown', (e) => {
+    const items = dropdown.querySelectorAll('.dropdown-item');
+    if (!items.length || dropdown.style.display === 'none') return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      dropdownFocusIndex = Math.min(dropdownFocusIndex + 1, items.length - 1);
+      updateDropdownFocus(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      dropdownFocusIndex = Math.max(dropdownFocusIndex - 1, 0);
+      updateDropdownFocus(items);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (dropdownFocusIndex >= 0 && items[dropdownFocusIndex]) {
+        const el = items[dropdownFocusIndex];
+        selectPlayer(el.dataset.id, el.dataset.name);
+        dropdown.style.display = 'none';
+        input.value = '';
+        dropdownFocusIndex = -1;
+      }
+    } else if (e.key === 'Escape' || e.key === 'Tab') {
+      dropdown.style.display = 'none';
+      dropdownFocusIndex = -1;
+    }
+  });
+
   input.addEventListener('blur', () => {
-    setTimeout(() => { dropdown.style.display = 'none'; }, 300);
+    setTimeout(() => {
+      dropdown.style.display = 'none';
+      dropdownFocusIndex = -1;
+      if (input.value.trim() && !selectedPlayer) {
+        input.classList.add('input-error');
+        let errEl = document.getElementById('playerErrorMsg');
+        if (!errEl) {
+          errEl = document.createElement('p');
+          errEl.id = 'playerErrorMsg';
+          errEl.className = 'player-error-msg';
+          errEl.textContent = 'Select a player from the list.';
+          input.parentNode.appendChild(errEl);
+        }
+      }
+    }, 200);
   });
 
   input.addEventListener('focus', () => {
+    clearInputError();
     if (input.value.trim()) input.dispatchEvent(new Event('input'));
   });
 
   clearBtn.addEventListener('click', clearPlayer);
 }
 
+function updateDropdownFocus(items) {
+  items.forEach((item, i) => {
+    item.classList.toggle('dropdown-item--focused', i === dropdownFocusIndex);
+  });
+  if (items[dropdownFocusIndex]) {
+    items[dropdownFocusIndex].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function clearInputError() {
+  document.getElementById('playerSearch').classList.remove('input-error');
+  const errEl = document.getElementById('playerErrorMsg');
+  if (errEl) errEl.remove();
+}
+
 function selectPlayer(id, name) {
   selectedPlayer = { id, name };
   localStorage.setItem('selectedPlayer', JSON.stringify(selectedPlayer));
   showSelectedPlayer();
+  clearInputError();
 }
 
 function showSelectedPlayer() {
@@ -181,6 +247,7 @@ function clearPlayer() {
   document.getElementById('selectedPlayerDisplay').style.display = 'none';
   document.getElementById('playerSearch').style.display = 'block';
   document.getElementById('playerSearch').value = '';
+  clearInputError();
 }
 
 // =====================
@@ -195,16 +262,43 @@ function updateDateDisplay() {
 }
 
 // =====================
+//  UI - Skeleton
+// =====================
+function showSkeleton() {
+  document.getElementById('loadingSpinner').style.display = 'none';
+  document.getElementById('courtsGrid').style.display = 'none';
+  let skeletonEl = document.getElementById('courtsSkeleton');
+  if (!skeletonEl) {
+    skeletonEl = document.createElement('div');
+    skeletonEl.id = 'courtsSkeleton';
+    skeletonEl.className = 'skeleton-grid';
+    document.getElementById('courtsSection').prepend(skeletonEl);
+  }
+  const cols = courts.length || 2;
+  skeletonEl.style.display = 'grid';
+  skeletonEl.innerHTML = Array.from({ length: cols }).map(() => `
+    <div class="skeleton-card">
+      <div class="skeleton-header"></div>
+      ${Array.from({ length: 4 }).map(() => '<div class="skeleton-slot"></div>').join('')}
+    </div>
+  `).join('');
+}
+
+function hideSkeleton() {
+  const skeletonEl = document.getElementById('courtsSkeleton');
+  if (skeletonEl) skeletonEl.style.display = 'none';
+}
+
+// =====================
 //  UI - Courts
 // =====================
 function renderCourts() {
+  hideSkeleton();
   const grid = document.getElementById('courtsGrid');
-  const spinner = document.getElementById('loadingSpinner');
-  spinner.style.display = 'none';
+  document.getElementById('loadingSpinner').style.display = 'none';
   grid.style.display = 'grid';
   grid.innerHTML = '';
 
-  const dateKey = formatDateKey(currentDate);
   const dateMatches = matches || {};
 
   courts.forEach(court => {
@@ -212,10 +306,9 @@ function renderCourts() {
 
     const card = document.createElement('div');
     card.className = 'court-card';
-
     card.innerHTML = `
       <div class="court-header">
-        <span class="court-icon">🏓</span>
+        <i data-lucide="layout-grid" class="icon-lg court-icon"></i>
         <h2>${court}</h2>
       </div>
       <div class="court-slots" id="slots-${court.replace(/\s+/g, '-')}"></div>
@@ -254,13 +347,19 @@ function renderCourts() {
         const playersList = booking.players || [booking.name];
         nameText = playersList.join(', ');
         whenText = timeAgo(booking.bookedAt);
-
         if (match && (match.team1Sets !== undefined || match.team2Sets !== undefined)) {
           scoreText = `${match.team1Sets ?? 0}-${match.team2Sets ?? 0} sets`;
         }
       }
 
+      const isClickable = (!past && !locked) || !!booking;
       el.className = `slot ${statusClass}`;
+      if (isClickable) {
+        el.setAttribute('role', 'button');
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('aria-label', `${court} ${slot} — ${badge}`);
+      }
+
       el.innerHTML = `
         <span class="slot-time">${slot}</span>
         <div class="slot-info">
@@ -271,15 +370,21 @@ function renderCourts() {
         <span class="slot-badge">${badge}</span>
       `;
 
-      if (!past && !locked) {
+      if (isClickable) {
         el.addEventListener('click', () => openModal(court, slot, booking, match));
-      } else if (booking) {
-        el.addEventListener('click', () => openModal(court, slot, booking, match));
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openModal(court, slot, booking, match);
+          }
+        });
       }
 
       slotsContainer.appendChild(el);
     });
   });
+
+  lucide.createIcons();
 }
 
 // =====================
@@ -288,90 +393,147 @@ function renderCourts() {
 function openModal(court, slot, booking, match) {
   const overlay = document.getElementById('modalOverlay');
   const content = document.getElementById('modalContent');
+  overlay.setAttribute('aria-hidden', 'false');
 
   if (booking) {
-    const playersList = booking.players || [booking.name];
-    const hasMatch = match && (match.team1Sets !== undefined || match.team2Sets !== undefined);
-
-    content.innerHTML = `
-      <h3>Slot Booked</h3>
-      <p class="modal-subtitle">This slot is currently reserved.</p>
-      <div class="modal-info">
-        <strong>${court}</strong><br>
-        ${slot}<br>
-        Players: <strong>${playersList.join(', ')}</strong><br>
-        ${booking.bookedAt ? `Reserved ${timeAgo(booking.bookedAt)}` : ''}
-      </div>
-      ${hasMatch ? `
-        <div class="match-result">
-          <div class="match-teams">
-            <span class="${match.winner === 'team1' ? 'winner' : ''}">${(match.team1 || []).join(' & ')}</span>
-            <span class="vs">vs</span>
-            <span class="${match.winner === 'team2' ? 'winner' : ''}">${(match.team2 || []).join(' & ')}</span>
-          </div>
-          <div class="match-scores"><span>${match.team1Sets ?? 0} - ${match.team2Sets ?? 0} sets</span></div>
-        </div>
-      ` : ''}
-      <div class="modal-actions">
-        ${!isSlotPast(slot) ? `<button class="btn btn-danger" id="cancelBtn">Cancel This Booking</button>` : ''}
-        <button class="btn btn-primary" id="scoreBtn">Log Match Score</button>
-        <button class="btn btn-secondary" id="closeModalBtn">Close</button>
-      </div>
-    `;
-
-    if (!isSlotPast(slot) && document.getElementById('cancelBtn')) {
-      document.getElementById('cancelBtn').addEventListener('click', () => {
-        const name = getPlayerName();
-        const pid = getPlayerId();
-        if (!name && !pid) {
-          showToast('Select your player first to cancel', 'error');
-          closeModal();
-          return;
-        }
-        cancelBooking(court, slot, name, pid);
-      });
-    }
-
-    document.getElementById('scoreBtn').addEventListener('click', () => {
-      openScoreModal(court, slot, booking, match);
-    });
-
-    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-
+    showBookedModal(court, slot, booking, match, content);
   } else {
-    const name = getPlayerName();
-    content.innerHTML = `
-      <h3>Book This Slot</h3>
-      <p class="modal-subtitle">Reserve this court for yourself or your group.</p>
-      <div class="modal-info">
-        <strong>${court}</strong><br>
-        ${slot}<br>
-        ${formatDateLabel(currentDate)}
-      </div>
-      ${!name ? `<p style="color:var(--red);font-size:0.85rem;margin-bottom:12px;">Please select a player above first.</p>` : ''}
-      <div class="modal-actions">
-        <button class="btn btn-primary" id="confirmBookBtn" ${!name ? 'disabled style="opacity:0.5"' : ''}>
-          Book as "${name || '...'}"
-        </button>
-        <button class="btn btn-secondary" id="closeModalBtn">Cancel</button>
-      </div>
-    `;
-
-    if (name) {
-      document.getElementById('confirmBookBtn').addEventListener('click', () => {
-        makeBooking(court, slot, name, getPlayerId());
-      });
-    }
-
-    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+    showBookSlotModal(court, slot, content);
   }
 
   overlay.classList.add('active');
 }
 
+function showBookedModal(court, slot, booking, match, content) {
+  const playersList = booking.players || [booking.name];
+  const hasMatch = match && (match.team1Sets !== undefined || match.team2Sets !== undefined);
+
+  content.innerHTML = `
+    <h3>Slot Booked</h3>
+    <p class="modal-subtitle">This slot is currently reserved.</p>
+    <div class="modal-info">
+      <strong>${court}</strong><br>
+      ${slot}<br>
+      Players: <strong>${playersList.join(', ')}</strong><br>
+      ${booking.bookedAt ? `Reserved ${timeAgo(booking.bookedAt)}` : ''}
+    </div>
+    ${hasMatch ? `
+      <div class="match-result">
+        <div class="match-teams">
+          <span class="${match.winner === 'team1' ? 'winner' : ''}">${(match.team1 || []).join(' & ')}</span>
+          <span class="vs">vs</span>
+          <span class="${match.winner === 'team2' ? 'winner' : ''}">${(match.team2 || []).join(' & ')}</span>
+        </div>
+        <div class="match-scores"><span>${match.team1Sets ?? 0} - ${match.team2Sets ?? 0} sets</span></div>
+      </div>
+    ` : ''}
+    <div class="modal-actions">
+      ${!isSlotPast(slot) ? `<button class="btn btn-danger" id="cancelBtn">Cancel This Booking</button>` : ''}
+      <button class="btn btn-primary" id="scoreBtn">Log Match Score</button>
+      <button class="btn btn-secondary" id="closeModalBtn">Close</button>
+    </div>
+  `;
+
+  if (!isSlotPast(slot) && document.getElementById('cancelBtn')) {
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      const name = getPlayerName();
+      const pid = getPlayerId();
+      if (!name && !pid) {
+        showToast('Select your player first to cancel', 'error');
+        closeModal();
+        return;
+      }
+      showCancelConfirmModal(court, slot, booking, match, name, pid, content);
+    });
+  }
+
+  document.getElementById('scoreBtn').addEventListener('click', () => {
+    openScoreModal(court, slot, booking, match);
+  });
+
+  document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+}
+
+function showCancelConfirmModal(court, slot, booking, match, name, pid, content) {
+  const dateStr = currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  content.innerHTML = `
+    <h3>Cancel Booking?</h3>
+    <p class="modal-subtitle">This will free up the slot for others.</p>
+    <div class="modal-info">
+      <strong>${court}</strong><br>
+      ${slot} · ${dateStr}<br>
+      Cancelling as: <strong>${name}</strong>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="confirmCancelBtn">Yes, Cancel</button>
+      <button class="btn btn-secondary" id="backBtn">Go Back</button>
+    </div>
+  `;
+  document.getElementById('confirmCancelBtn').addEventListener('click', () => {
+    cancelBooking(court, slot, name, pid);
+  });
+  document.getElementById('backBtn').addEventListener('click', () => {
+    showBookedModal(court, slot, booking, match, content);
+  });
+}
+
+function showBookSlotModal(court, slot, content) {
+  const name = getPlayerName();
+  const dateStr = currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  content.innerHTML = `
+    <h3>Book This Slot</h3>
+    <p class="modal-subtitle">Reserve this court for yourself or your group.</p>
+    <div class="modal-info">
+      <strong>${court}</strong><br>
+      ${slot} · ${dateStr}
+    </div>
+    ${!name
+      ? `<p style="color:var(--red);font-size:0.85rem;margin-bottom:12px;">Select a player from the list above first.</p>`
+      : `<p style="font-size:0.9rem;margin-bottom:12px;">Booking as <strong>${name}</strong></p>`
+    }
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmBookBtn" ${!name ? 'disabled style="opacity:0.5"' : ''}>
+        Book as "${name || '...'}"
+      </button>
+      <button class="btn btn-secondary" id="closeModalBtn">Cancel</button>
+    </div>
+  `;
+
+  if (name) {
+    document.getElementById('confirmBookBtn').addEventListener('click', () => {
+      showBookConfirmModal(court, slot, name, getPlayerId(), content);
+    });
+  }
+  document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+}
+
+function showBookConfirmModal(court, slot, name, playerId, content) {
+  const dateStr = currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  content.innerHTML = `
+    <h3>Confirm Booking</h3>
+    <p class="modal-subtitle">Ready to reserve this slot?</p>
+    <div class="modal-info">
+      <strong>${court}</strong><br>
+      ${slot} · ${dateStr}<br>
+      Player: <strong>${name}</strong>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="finalBookBtn">Confirm Booking</button>
+      <button class="btn btn-secondary" id="backBookBtn">Go Back</button>
+    </div>
+  `;
+  document.getElementById('finalBookBtn').addEventListener('click', () => {
+    makeBooking(court, slot, name, playerId);
+  });
+  document.getElementById('backBookBtn').addEventListener('click', () => {
+    showBookSlotModal(court, slot, content);
+  });
+}
+
 function openScoreModal(court, slot, booking, existingMatch) {
   const content = document.getElementById('modalContent');
   const playersList = booking.players || [booking.name];
+  const isSingles = playersList.length <= 2;
 
   const t1p1 = existingMatch?.team1?.[0] || playersList[0] || '';
   const t1p2 = existingMatch?.team1?.[1] || playersList[1] || '';
@@ -380,21 +542,23 @@ function openScoreModal(court, slot, booking, existingMatch) {
   const existingT1Sets = existingMatch?.team1Sets ?? 0;
   const existingT2Sets = existingMatch?.team2Sets ?? 0;
 
-  const allOpts = `<option value="">--</option>` + players.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+  const allOpts = `<option value="">--</option>` + players.map(p =>
+    `<option value="${p.name}">${p.name}</option>`
+  ).join('');
 
   content.innerHTML = `
     <h3>Log Match Score</h3>
-    <p class="modal-subtitle">${court} - ${slot}</p>
+    <p class="modal-subtitle">${court} · ${slot} &nbsp;·&nbsp; Best of 3 Sets</p>
     <div class="score-form">
       <div class="team-section">
-        <label>Team 1</label>
+        <label class="team-section-label-1">Team 1</label>
         <select id="t1p1" class="score-select">${allOpts}</select>
-        <select id="t1p2" class="score-select">${allOpts}</select>
+        ${!isSingles ? `<select id="t1p2" class="score-select">${allOpts}</select>` : `<input type="hidden" id="t1p2" value="">`}
       </div>
       <div class="team-section">
-        <label>Team 2</label>
+        <label class="team-section-label-2">Team 2</label>
         <select id="t2p1" class="score-select">${allOpts}</select>
-        <select id="t2p2" class="score-select">${allOpts}</select>
+        ${!isSingles ? `<select id="t2p2" class="score-select">${allOpts}</select>` : `<input type="hidden" id="t2p2" value="">`}
       </div>
       <div class="sets-section">
         <label>Sets won</label>
@@ -413,11 +577,10 @@ function openScoreModal(court, slot, booking, existingMatch) {
     </div>
   `;
 
-  // Pre-select player values
   if (t1p1) document.getElementById('t1p1').value = t1p1;
-  if (t1p2) document.getElementById('t1p2').value = t1p2;
+  if (!isSingles && t1p2) document.getElementById('t1p2').value = t1p2;
   if (t2p1) document.getElementById('t2p1').value = t2p1;
-  if (t2p2) document.getElementById('t2p2').value = t2p2;
+  if (!isSingles && t2p2) document.getElementById('t2p2').value = t2p2;
 
   document.getElementById('saveScoreBtn').addEventListener('click', async () => {
     const team1 = [document.getElementById('t1p1').value, document.getElementById('t1p2').value].filter(Boolean);
@@ -459,11 +622,20 @@ function openScoreModal(court, slot, booking, existingMatch) {
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('active');
+  document.getElementById('modalOverlay').setAttribute('aria-hidden', 'true');
 }
 
 document.getElementById('modalClose').addEventListener('click', closeModal);
 document.getElementById('modalOverlay').addEventListener('click', (e) => {
   if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+
+// Escape key closes any open modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeModal();
+    document.getElementById('leaderboardOverlay').classList.remove('active');
+  }
 });
 
 // =====================
@@ -480,7 +652,13 @@ async function openLeaderboard() {
     const data = await res.json();
 
     if (data.length === 0) {
-      table.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:20px;">No matches recorded yet. Play some games and log scores!</p>';
+      table.innerHTML = `
+        <div class="empty-state">
+          <i data-lucide="trophy" style="width:40px;height:40px;opacity:0.3;display:block;"></i>
+          <p>No matches yet. Play a game and log the score!</p>
+        </div>
+      `;
+      lucide.createIcons();
       return;
     }
 
@@ -531,6 +709,7 @@ async function fetchBookings() {
     bookings = await res.json();
     renderCourts();
   } catch {
+    hideSkeleton();
     showToast('Failed to load bookings', 'error');
   }
 }
@@ -589,26 +768,32 @@ async function cancelBooking(court, slot, name, playerId) {
 // =====================
 //  Date Navigation
 // =====================
+function lockNav(lock) {
+  navLocked = lock;
+  ['prevDay', 'nextDay'].forEach(id => {
+    const btn = document.getElementById(id);
+    btn.disabled = lock;
+    btn.style.opacity = lock ? '0.4' : '';
+  });
+}
+
 document.getElementById('prevDay').addEventListener('click', () => {
+  if (navLocked) return;
   currentDate.setDate(currentDate.getDate() - 1);
   updateDateDisplay();
-  showSpinner();
-  fetchBookings();
-  fetchMatches();
+  showSkeleton();
+  lockNav(true);
+  Promise.all([fetchBookings(), fetchMatches()]).finally(() => lockNav(false));
 });
 
 document.getElementById('nextDay').addEventListener('click', () => {
+  if (navLocked) return;
   currentDate.setDate(currentDate.getDate() + 1);
   updateDateDisplay();
-  showSpinner();
-  fetchBookings();
-  fetchMatches();
+  showSkeleton();
+  lockNav(true);
+  Promise.all([fetchBookings(), fetchMatches()]).finally(() => lockNav(false));
 });
-
-function showSpinner() {
-  document.getElementById('loadingSpinner').style.display = 'flex';
-  document.getElementById('courtsGrid').style.display = 'none';
-}
 
 // =====================
 //  Socket.io
@@ -682,7 +867,10 @@ async function init() {
   await fetchPlayers();
   setupPlayerSelector();
 
+  showSkeleton();
+  lockNav(true);
   await Promise.all([fetchBookings(), fetchMatches()]);
+  lockNav(false);
 
   // Refresh time-based "past" status every minute
   setInterval(() => {
@@ -690,6 +878,9 @@ async function init() {
     const currentKey = formatDateKey(currentDate);
     if (currentKey === todayKey) renderCourts();
   }, 60000);
+
+  // Initialize static header icons
+  lucide.createIcons();
 
   initSocket();
 }

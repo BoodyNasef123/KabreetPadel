@@ -13,7 +13,7 @@
   background: var(--card-bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
-  padding: 40px 32px;
+  padding: 32px;
   max-width: 360px;
   width: 100%;
   text-align: center;
@@ -117,7 +117,7 @@
 }
 
 .btn-sm {
-  padding: 8px 14px;
+  padding: 8px 16px;
   font-size: 0.85rem;
 }
 
@@ -167,7 +167,11 @@
   background: var(--card-bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  overflow: hidden;
+  overflow-x: auto;
+}
+
+.admin-table .table-row {
+  min-width: 480px;
 }
 
 .table-row {
@@ -236,10 +240,48 @@
 }
 
 .empty-state {
-  padding: 30px 20px;
+  padding: 40px 20px;
   text-align: center;
   color: var(--text-light);
   font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.empty-state svg {
+  opacity: 0.25;
+  width: 36px;
+  height: 36px;
+}
+
+/* =====================
+   Logs filter bar
+   ===================== */
+.logs-filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.logs-filter-bar select,
+.logs-filter-bar input {
+  padding: 8px 12px;
+  border: 2px solid var(--gray-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  outline: none;
+  background: var(--card-bg);
+  color: var(--text);
+  flex: 1;
+  min-width: 140px;
+}
+
+.logs-filter-bar select:focus,
+.logs-filter-bar input:focus {
+  border-color: var(--blue);
 }
 
 /* =====================
@@ -329,4 +371,22 @@
   .col-score {
     flex-basis: 100%;
   }
+}
+
+/* =====================
+   Dark Mode (Admin)
+   ===================== */
+@media (prefers-color-scheme: dark) {
+  .login-card input,
+  .admin-search input,
+  .settings-form input,
+  .logs-filter-bar select,
+  .logs-filter-bar input {
+    background: #1e2535;
+    color: var(--text);
+    border-color: #3a4155;
+  }
+  .tab { background: #2f3649; }
+  .tab:hover { background: #3a4155; }
+  .tab.active { background: var(--card-bg); }
 }

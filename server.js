@@ -105,6 +105,17 @@ app.get('/api/players', (req, res) => {
   res.json(players.filter(p => p.active));
 });
 
+// Self-registration: anyone can create an account
+app.post('/api/players/register', (req, res) => {
+  const name = (req.body.name || '').trim();
+  if (!name) return res.status(400).json({ error: 'Name is required' });
+  if (name.length < 2) return res.status(400).json({ error: 'Name must be at least 2 characters' });
+  const player = store.createPlayer(name);
+  if (!player) return res.status(409).json({ error: 'A player with that name already exists' });
+  io.emit('playerAdded', player);
+  res.json(player);
+});
+
 
 // Bookings
 app.get('/api/bookings/:date', (req, res) => {

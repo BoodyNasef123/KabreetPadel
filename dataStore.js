@@ -94,6 +94,12 @@ function createPlayer(name) {
   };
   data.players.push(player);
   savePlayers(data);
+
+  // Keep CSV in sync so new players survive future deployments
+  try {
+    fs.appendFileSync(PLAYERS_CSV, `\n${player.name}`);
+  } catch { /* non-fatal */ }
+
   return player;
 }
 

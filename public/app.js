@@ -124,28 +124,74 @@ function showLoginOverlay() {
 
 function renderLoginList(query) {
   const list = document.getElementById('loginPlayerList');
+  const active = players.filter(p => p.active !== false);
   const filtered = query
-    ? players.filter(p => p.active !== false && p.name.toLowerCase().includes(query))
-    : players.filter(p => p.active !== false);
+    ? active.filter(p => p.name.toLowerCase().includes(query))
+    : active;
 
-  if (filtered.length === 0) {
-    list.innerHTML = `<p style="text-align:center;color:var(--text-light);padding:16px 0;">
-      ${query ? 'No players match "' + query + '".' : 'No players registered yet.'}
-    </p>`;
-    return;
-  }
-
-  list.innerHTML = filtered.map(p =>
+  let html = filtered.map(p =>
     `<button class="login-player-btn" data-id="${p.id}" data-name="${p.name}">
        <i data-lucide="user" class="icon"></i>${p.name}
      </button>`
   ).join('');
 
-  list.querySelectorAll('.login-player-btn').forEach(btn => {
+  // Show "Create account" option when search has text and no exact match
+  if (query) {
+    const exactMatch = active.find(p => p.name.toLowerCase() === query.toLowerCase());
+    if (!exactMatch) {
+      const escaped = query.replace(/"/g, '&quot;');
+      html += `<button class="login-player-btn login-create-btn" data-name="${escaped}">
+        <i data-lucide="user-plus" class="icon"></i>
+        Create account as "<strong>${query}</strong>"
+      </button>`;
+    }
+  }
+
+  if (!html) {
+    list.innerHTML = `<p style="text-align:center;color:var(--text-light);padding:16px 0;">No players registered yet.</p>`;
+    return;
+  }
+
+  list.innerHTML = html;
+
+  list.querySelectorAll('.login-player-btn:not(.login-create-btn)').forEach(btn => {
     btn.addEventListener('click', () => loginAs(btn.dataset.id, btn.dataset.name));
   });
 
+  const createBtn = list.querySelector('.login-create-btn');
+  if (createBtn) {
+    createBtn.addEventListener('click', () => registerAndLogin(createBtn.dataset.name));
+  }
+
   lucide.createIcons();
+}
+
+async function registerAndLogin(name) {
+  const createBtn = document.querySelector('.login-create-btn');
+  if (createBtn) {
+    createBtn.disabled = true;
+    createBtn.style.opacity = '0.6';
+  }
+
+  try {
+    const res = await fetch('/api/players/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || 'Could not create account', 'error');
+      if (createBtn) { createBtn.disabled = false; createBtn.style.opacity = ''; }
+      return;
+    }
+    players.push(data);
+    loginAs(data.id, data.name);
+    showToast(`Welcome, ${data.name}!`, 'success');
+  } catch {
+    showToast('Network error. Please try again.', 'error');
+    if (createBtn) { createBtn.disabled = false; createBtn.style.opacity = ''; }
+  }
 }
 
 function loginAs(id, name) {

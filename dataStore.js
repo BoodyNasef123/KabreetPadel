@@ -3,6 +3,7 @@ const path = require('path');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const PLAYERS_FILE = path.join(DATA_DIR, 'players.json');
+const PLAYERS_CSV = path.join(__dirname, 'List of Players.csv');
 const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
 const ADMIN_FILE = path.join(DATA_DIR, 'admin.json');
 const MATCHES_FILE = path.join(DATA_DIR, 'matches.json');
@@ -162,9 +163,42 @@ function addLog(entry) {
 }
 
 // =====================
+//  Seed players from CSV if players.json is missing or empty
+// =====================
+function seedPlayersFromCSV() {
+  if (!fs.existsSync(PLAYERS_CSV)) return;
+  const csvLines = fs.readFileSync(PLAYERS_CSV, 'utf8')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+
+  const data = loadPlayers();
+  let changed = false;
+
+  for (const name of csvLines) {
+    const exists = data.players.find(p => p.name.toLowerCase() === name.toLowerCase());
+    if (!exists) {
+      data.players.push({
+        id: `p_${data.nextId++}`,
+        name,
+        createdAt: new Date().toISOString(),
+        active: true
+      });
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    savePlayers(data);
+    console.log(`Seeded ${csvLines.length} players from CSV`);
+  }
+}
+
+// =====================
 //  Init default files if they don't exist
 // =====================
 if (!fs.existsSync(PLAYERS_FILE)) savePlayers(DEFAULT_PLAYERS);
+seedPlayersFromCSV();
 if (!fs.existsSync(ADMIN_FILE)) saveAdmin(DEFAULT_ADMIN);
 if (!fs.existsSync(MATCHES_FILE)) saveMatches({});
 if (!fs.existsSync(LOGS_FILE)) queueWrite(LOGS_FILE, []);

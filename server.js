@@ -69,8 +69,9 @@ function computeStats(date) {
         const names = courtData[slot].players || [courtData[slot].name];
         allPlayers.push(...names);
       } else if (date === todayKey) {
-        const [slotH, slotM] = slot.split(':').map(Number);
-        if (slotH * 60 + slotM <= now.getHours() * 60 + now.getMinutes()) past++;
+        const [, endTime] = slot.split(' - ');
+        const [endH, endM] = endTime.split(':').map(Number);
+        if (endH * 60 + endM <= now.getHours() * 60 + now.getMinutes()) past++;
       } else if (date < todayKey) {
         past++;
       }

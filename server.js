@@ -10,11 +10,16 @@ const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 
-// Time slots: 24 one-hour slots
+// Time slots: 48 half-hour slots
 const TIME_SLOTS = [];
-for (let h = 0; h < 24; h++) {
-  const start = `${h.toString().padStart(2, '0')}:00`;
-  const end = `${((h + 1) % 24).toString().padStart(2, '0')}:00`;
+for (let m = 0; m < 24 * 60; m += 30) {
+  const startH = Math.floor(m / 60);
+  const startM = m % 60;
+  const endTotal = m + 30;
+  const endH = Math.floor(endTotal / 60) % 24;
+  const endMin = endTotal % 60;
+  const start = `${startH.toString().padStart(2, '0')}:${startM.toString().padStart(2, '0')}`;
+  const end = `${endH.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
   TIME_SLOTS.push(`${start} - ${end}`);
 }
 
@@ -64,8 +69,8 @@ function computeStats(date) {
         const names = courtData[slot].players || [courtData[slot].name];
         allPlayers.push(...names);
       } else if (date === todayKey) {
-        const h = parseInt(slot.split(':')[0]);
-        if (h <= now.getHours()) past++;
+        const [slotH, slotM] = slot.split(':').map(Number);
+        if (slotH * 60 + slotM <= now.getHours() * 60 + now.getMinutes()) past++;
       } else if (date < todayKey) {
         past++;
       }

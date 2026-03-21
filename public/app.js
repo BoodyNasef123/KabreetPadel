@@ -45,9 +45,9 @@ function isSlotPast(slotStr) {
   if (currentKey > todayKey) return false;
 
   const startTime = slotStr.split(' - ')[0];
-  const [h] = startTime.split(':').map(Number);
+  const [h, m] = startTime.split(':').map(Number);
   const now = new Date();
-  const slotDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, 0);
+  const slotDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
   return slotDate <= now;
 }
 

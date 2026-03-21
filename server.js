@@ -71,7 +71,8 @@ function computeStats(date) {
       } else if (date === todayKey) {
         const [, endTime] = slot.split(' - ');
         const [endH, endM] = endTime.split(':').map(Number);
-        if (endH * 60 + endM <= now.getHours() * 60 + now.getMinutes()) past++;
+        const endMins = (endH === 0 && endM === 0) ? 1440 : endH * 60 + endM;
+        if (endMins <= now.getHours() * 60 + now.getMinutes()) past++;
       } else if (date < todayKey) {
         past++;
       }

@@ -46,9 +46,10 @@ function isSlotPast(slotStr) {
 
   const endTime = slotStr.split(' - ')[1];
   const [h, m] = endTime.split(':').map(Number);
+  const endMins = (h === 0 && m === 0) ? 1440 : h * 60 + m;
   const now = new Date();
-  const slotDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
-  return slotDate <= now;
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  return endMins <= nowMins;
 }
 
 function isSlotLocked(court, slot) {

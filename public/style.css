@@ -179,13 +179,13 @@ body {
 }
 
 .login-create-btn {
-  border-color: var(--blue) !important;
-  color: var(--blue) !important;
-  background: rgba(52, 152, 219, 0.06) !important;
+  border-color: var(--green) !important;
+  color: var(--green-dark) !important;
+  background: rgba(46, 204, 113, 0.08) !important;
 }
 
 .login-create-btn:hover {
-  background: rgba(52, 152, 219, 0.14) !important;
+  background: rgba(46, 204, 113, 0.18) !important;
 }
 
 .login-not-registered {

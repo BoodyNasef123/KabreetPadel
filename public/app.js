@@ -116,13 +116,16 @@ function showLoginOverlay() {
 
   overlay.style.display = 'flex';
   searchInput.value = '';
-  renderLoginList('');
+  renderLoginList('', '');
 
-  searchInput.oninput = () => renderLoginList(searchInput.value.trim().toLowerCase());
+  searchInput.oninput = () => {
+    const raw = searchInput.value.trim();
+    renderLoginList(raw.toLowerCase(), raw);
+  };
   setTimeout(() => searchInput.focus(), 100);
 }
 
-function renderLoginList(query) {
+function renderLoginList(query, rawQuery = query) {
   const list = document.getElementById('loginPlayerList');
   const active = players.filter(p => p.active !== false);
   const filtered = query
@@ -139,10 +142,10 @@ function renderLoginList(query) {
   if (query) {
     const exactMatch = active.find(p => p.name.toLowerCase() === query.toLowerCase());
     if (!exactMatch) {
-      const escaped = query.replace(/"/g, '&quot;');
+      const escaped = rawQuery.replace(/"/g, '&quot;');
       html += `<button class="login-player-btn login-create-btn" data-name="${escaped}">
         <i data-lucide="user-plus" class="icon"></i>
-        Create account as "<strong>${query}</strong>"
+        Create new user "<strong>${rawQuery}</strong>"
       </button>`;
     }
   }
